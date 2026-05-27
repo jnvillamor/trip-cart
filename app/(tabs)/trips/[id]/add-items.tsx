@@ -9,7 +9,11 @@ import { useCategories } from '@/ui/hooks/useCategories';
 import { useDebouncedValue } from '@/ui/hooks/useDebouncedValue';
 import { useGoods, useGoodSuggestionsForStore } from '@/ui/hooks/useGoods';
 import { useTrip } from '@/ui/hooks/useTrips';
-import { useCreateTripItem, useTripItems } from '@/ui/hooks/useTripItems';
+import {
+  useCreateTripItem,
+  useRemoveTripItem,
+  useTripItems,
+} from '@/ui/hooks/useTripItems';
 import { Theme } from '@/ui/theme/tokens';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
@@ -33,9 +37,13 @@ export default function AddItemsScreen() {
   const { data: items = [] } = useTripItems(tripId);
   const { data: suggestionCounts } = useGoodSuggestionsForStore(trip?.store_id, tripId);
   const createItem = useCreateTripItem(tripId);
+  const removeItem = useRemoveTripItem(tripId);
 
   const categoryById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
-  const addedGoodIds = useMemo(() => new Set(items.map((i) => i.good_id)), [items]);
+  const itemByGoodId = useMemo(
+    () => new Map(items.map((i) => [i.good_id, i])),
+    [items],
+  );
 
   const rows = useMemo<Row[]>(() => {
     const isSearching = debouncedQuery.trim().length > 0;
@@ -63,9 +71,13 @@ export default function AddItemsScreen() {
     return out;
   }, [goods, suggestionCounts, debouncedQuery]);
 
-  function add(good: Good) {
-    if (addedGoodIds.has(good.id)) return;
-    createItem.mutate({ good_id: good.id, planned_quantity: 1 });
+  function toggle(good: Good) {
+    const existing = itemByGoodId.get(good.id);
+    if (existing) {
+      removeItem.mutate(existing.id);
+    } else {
+      createItem.mutate({ good_id: good.id, planned_quantity: 1 });
+    }
   }
 
   return (
@@ -92,8 +104,8 @@ export default function AddItemsScreen() {
                   ? categoryById.get(item.good.default_category_id)
                   : undefined
               }
-              added={addedGoodIds.has(item.good.id)}
-              onAdd={() => add(item.good)}
+              added={itemByGoodId.has(item.good.id)}
+              onToggle={() => toggle(item.good)}
               tokens={tokens}
             />
           );
@@ -224,13 +236,13 @@ function GoodAddRow({
   good,
   category,
   added,
-  onAdd,
+  onToggle,
   tokens,
 }: {
   good: Good;
   category?: { name: string; color_hex: string | null; icon_name: string | null };
   added: boolean;
-  onAdd: () => void;
+  onToggle: () => void;
   tokens: Theme;
 }) {
   const color = category?.color_hex ?? tokens.bg.tonal;
@@ -240,8 +252,7 @@ function GoodAddRow({
   ) as keyof typeof MaterialIcons.glyphMap;
   return (
     <Pressable
-      onPress={added ? undefined : onAdd}
-      disabled={added}
+      onPress={onToggle}
       style={({ pressed }) => ({
         flexDirection: 'row',
         alignItems: 'center',
@@ -252,7 +263,6 @@ function GoodAddRow({
         borderWidth: 1,
         borderColor: added ? tokens.success[0] : tokens.border.subtle,
         backgroundColor: pressed ? tokens.bg.elevated : tokens.bg.surface,
-        opacity: added ? 0.65 : 1,
       })}
     >
       <View
