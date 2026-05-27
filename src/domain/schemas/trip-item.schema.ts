@@ -22,8 +22,8 @@ export const UpdateTripItemInputSchema = (currency_code: string) =>
     actual_quantity: optionalQuantity,
     actual_unit_price: moneyFormFieldSchema(currency_code),
 
-    isChecked: z.boolean().optional(),
-    sortOrder: z.number().int().nonnegative().optional(),
+    is_checked: z.boolean().optional(),
+    sort_order: z.number().int().nonnegative().optional(),
 
     notes: optionalNotes,
   });
