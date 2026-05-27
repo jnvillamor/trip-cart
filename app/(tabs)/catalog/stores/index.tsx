@@ -13,7 +13,6 @@ export default function StoresListScreen() {
       }}
     >
       <Text style={{ color: tokens.text.primary }}>Stores list</Text>
-      <Text style={{ color: tokens.text.tertiary, marginTop: 8 }}>Phase 2A.1</Text>
     </View>
   );
 }

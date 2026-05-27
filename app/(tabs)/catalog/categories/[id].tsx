@@ -16,7 +16,6 @@ export default function CategoryDetailScreen() {
     >
       <Text style={{ color: tokens.text.primary }}>Category detail</Text>
       <Text style={{ color: tokens.text.secondary, marginTop: 8 }}>id: {id}</Text>
-      <Text style={{ color: tokens.text.tertiary, marginTop: 4 }}>Phase 2A.4</Text>
     </View>
   );
 }
