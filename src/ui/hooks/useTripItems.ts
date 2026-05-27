@@ -24,7 +24,13 @@ export function useCreateTripItem(tripId: number) {
   return useMutation({
     mutationFn: async (input: CreateTripItemInput) => {
       const repo = await getRepo();
-      return repo.create(tripId, input);
+      const existing = await repo.list({ tripId });
+      const nextOrder = existing.reduce((max, it) => Math.max(max, it.sort_order), -1) + 1;
+      const created = await repo.create(tripId, input);
+      const updated = await repo.update(created.id, {
+        sort_order: nextOrder,
+      } as UpdateTripItemInput);
+      return updated ?? created;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['trip-items', tripId] }),
   });
