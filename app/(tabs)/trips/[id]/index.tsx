@@ -1,9 +1,10 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, Pressable, Text, View } from 'react-native';
+import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
 import { TRIP_STATUS_ENUM } from '@/domain/constants';
-import { Category, Good, Trip, TripItem } from '@/domain/entities';
+import { Good, Trip, TripItem } from '@/domain/entities';
 import { TripStatus } from '@/domain/schemas';
 import { PageHeader } from '@/ui/components/PageHeader';
 import { useCategories } from '@/ui/hooks/useCategories';
@@ -39,9 +40,9 @@ export default function TripDetailScreen() {
   const categoryById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
   const goodById = useMemo(() => new Map(goods.map((g) => [g.id, g])), [goods]);
 
-  const sections = useMemo(
-    () => groupByCategory(items, goodById, categoryById),
-    [items, goodById, categoryById],
+  const sortedItems = useMemo(
+    () => items.slice().sort((a, b) => a.sort_order - b.sort_order),
+    [items],
   );
 
   const plannedTotal = items.reduce(
@@ -74,6 +75,7 @@ export default function TripDetailScreen() {
 
   const isShopping = trip.status === TRIP_STATUS_ENUM.IN_PROGRESS;
   const editable = trip.is_editable;
+  const currency = trip.resolved_currency_code;
 
   function fieldFor(item: TripItem, kind: 'qty' | 'price') {
     const useActual = isShopping && item.is_checked;
@@ -91,9 +93,7 @@ export default function TripDetailScreen() {
 
   function openPriceEditor(item: TripItem) {
     if (!editable) return;
-    const field = fieldFor(item, 'price') as
-      | 'planned_unit_price'
-      | 'actual_unit_price';
+    const field = fieldFor(item, 'price') as 'planned_unit_price' | 'actual_unit_price';
     setPriceEdit({ itemId: item.id, field, initial: item[field] ?? 0 });
   }
 
@@ -106,33 +106,73 @@ export default function TripDetailScreen() {
     setPriceEdit(null);
   }
 
+  async function handleDragEnd(newOrder: TripItem[]) {
+    const updates = newOrder
+      .map((item, i) => (item.sort_order !== i ? { id: item.id, sort_order: i } : null))
+      .filter((x): x is { id: number; sort_order: number } => x !== null);
+    await Promise.all(
+      updates.map((u) => updateItem.mutateAsync({ id: u.id, input: { sort_order: u.sort_order } })),
+    );
+  }
+
+  function getItemCategoryId(item: TripItem): number | null {
+    return item.category_id_snapshot ?? goodById.get(item.good_id)?.default_category_id ?? null;
+  }
+
+  function renderRow({ item, drag, isActive, getIndex }: RenderItemParams<TripItem>) {
+    const index = getIndex() ?? 0;
+    const prev = index > 0 ? sortedItems[index - 1] : undefined;
+    const currentCat = getItemCategoryId(item);
+    const prevCat = prev ? getItemCategoryId(prev) : undefined;
+    const showHeader = !prev || currentCat !== prevCat;
+    const cat = currentCat != null ? categoryById.get(currentCat) : undefined;
+    return (
+      <View>
+        {showHeader ? (
+          <SectionHeader
+            name={cat?.name ?? 'Uncategorized'}
+            color={cat?.color_hex ?? '#9E9E9E'}
+            tokens={tokens}
+          />
+        ) : null}
+        <ItemRow
+          item={item}
+          good={goodById.get(item.good_id)}
+          currency={currency}
+          editable={editable}
+          isShopping={isShopping}
+          isActive={isActive}
+          onLongPress={editable ? drag : undefined}
+          onAdjustQty={(delta) => adjustQty(item, delta)}
+          onPressPrice={() => openPriceEditor(item)}
+          tokens={tokens}
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg.page }}>
       <PageHeader title={trip.name} subtitle={store?.name} />
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
-        <SummaryCard
-          trip={trip}
-          plannedTotal={plannedTotal}
-          actualTotal={actualTotal}
-          itemsBought={itemsBought}
-          itemsTotal={items.length}
-          tokens={tokens}
-        />
-
-        {sections.map((s) => (
-          <CategorySection
-            key={s.key}
-            section={s}
-            currency={trip.resolved_currency_code}
-            editable={editable}
-            isShopping={isShopping}
-            onAdjustQty={adjustQty}
-            onPressPrice={openPriceEditor}
-            tokens={tokens}
-          />
-        ))}
-
-        {items.length === 0 ? (
+      <DraggableFlatList
+        data={sortedItems}
+        keyExtractor={(item) => String(item.id)}
+        onDragEnd={({ data }) => handleDragEnd(data)}
+        renderItem={renderRow}
+        contentContainerStyle={{ padding: 16, gap: 12 }}
+        ListHeaderComponent={
+          <View style={{ marginBottom: 4 }}>
+            <SummaryCard
+              trip={trip}
+              plannedTotal={plannedTotal}
+              actualTotal={actualTotal}
+              itemsBought={itemsBought}
+              itemsTotal={items.length}
+              tokens={tokens}
+            />
+          </View>
+        }
+        ListEmptyComponent={
           <View
             style={{
               backgroundColor: tokens.bg.surface,
@@ -163,22 +203,24 @@ export default function TripDetailScreen() {
               Add goods you plan to buy on this trip.
             </Text>
           </View>
-        ) : null}
-
-        <Pressable
-          onPress={() => router.push(`/trips/${id}/add-items` as never)}
-          style={({ pressed }) => ({
-            paddingVertical: 14,
-            borderRadius: 14,
-            alignItems: 'center',
-            backgroundColor: pressed ? tokens.accent.active : tokens.accent.base,
-          })}
-        >
-          <Text style={{ color: tokens.text.onAccent, fontWeight: '700', fontSize: 15 }}>
-            Add items
-          </Text>
-        </Pressable>
-      </ScrollView>
+        }
+        ListFooterComponent={
+          <Pressable
+            onPress={() => router.push(`/trips/${id}/add-items` as never)}
+            style={({ pressed }) => ({
+              marginTop: 16,
+              paddingVertical: 14,
+              borderRadius: 14,
+              alignItems: 'center',
+              backgroundColor: pressed ? tokens.accent.active : tokens.accent.base,
+            })}
+          >
+            <Text style={{ color: tokens.text.onAccent, fontWeight: '700', fontSize: 15 }}>
+              Add items
+            </Text>
+          </Pressable>
+        }
+      />
 
       <NumpadSheet
         visible={priceEdit !== null}
@@ -188,6 +230,40 @@ export default function TripDetailScreen() {
         onClose={() => setPriceEdit(null)}
         tokens={tokens}
       />
+    </View>
+  );
+}
+
+function SectionHeader({ name, color, tokens }: { name: string; color: string; tokens: Theme }) {
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingTop: 8,
+        paddingBottom: 8,
+      }}
+    >
+      <View
+        style={{
+          width: 8,
+          height: 8,
+          borderRadius: 4,
+          backgroundColor: color,
+        }}
+      />
+      <Text
+        style={{
+          color: tokens.text.secondary,
+          fontSize: 11,
+          fontWeight: '700',
+          textTransform: 'uppercase',
+          letterSpacing: 0.5,
+        }}
+      >
+        {name}
+      </Text>
     </View>
   );
 }
@@ -226,9 +302,7 @@ function SummaryCard({
         }}
       >
         <StatusBadge status={trip.status} tokens={tokens} />
-        <Text style={{ color: tokens.text.tertiary, fontSize: 13 }}>
-          {formatTripDate(trip)}
-        </Text>
+        <Text style={{ color: tokens.text.tertiary, fontSize: 13 }}>{formatTripDate(trip)}</Text>
       </View>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <TotalCol
@@ -290,126 +364,16 @@ function TotalCol({
   );
 }
 
-type Section = {
-  key: string;
-  categoryName: string;
-  categoryColor: string;
-  items: { item: TripItem; good?: Good }[];
-};
-
-function groupByCategory(
-  items: TripItem[],
-  goodById: Map<number, Good>,
-  categoryById: Map<number, Category>,
-): Section[] {
-  const groups = new Map<string, Section>();
-  for (const item of items.slice().sort((a, b) => a.sort_order - b.sort_order)) {
-    const good = goodById.get(item.good_id);
-    const categoryId = item.category_id_snapshot ?? good?.default_category_id ?? null;
-    const cat = categoryId != null ? categoryById.get(categoryId) : undefined;
-    const key = cat ? String(cat.id) : 'uncategorized';
-    let group = groups.get(key);
-    if (!group) {
-      group = {
-        key,
-        categoryName: cat?.name ?? 'Uncategorized',
-        categoryColor: cat?.color_hex ?? '#9E9E9E',
-        items: [],
-      };
-      groups.set(key, group);
-    }
-    group.items.push({ item, good });
-  }
-  return Array.from(groups.values());
-}
-
-function CategorySection({
-  section,
-  currency,
-  editable,
-  isShopping,
-  onAdjustQty,
-  onPressPrice,
-  tokens,
-}: {
-  section: Section;
-  currency: string;
-  editable: boolean;
-  isShopping: boolean;
-  onAdjustQty: (item: TripItem, delta: number) => void;
-  onPressPrice: (item: TripItem) => void;
-  tokens: Theme;
-}) {
-  return (
-    <View
-      style={{
-        backgroundColor: tokens.bg.surface,
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: tokens.border.subtle,
-        overflow: 'hidden',
-      }}
-    >
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 8,
-          paddingHorizontal: 16,
-          paddingVertical: 12,
-          backgroundColor: tokens.bg.tonal,
-        }}
-      >
-        <View
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: 4,
-            backgroundColor: section.categoryColor,
-          }}
-        />
-        <Text
-          style={{
-            color: tokens.text.secondary,
-            fontSize: 12,
-            fontWeight: '700',
-            textTransform: 'uppercase',
-            letterSpacing: 0.5,
-          }}
-        >
-          {section.categoryName}
-        </Text>
-        <Text style={{ color: tokens.text.tertiary, fontSize: 12 }}>
-          · {section.items.length}
-        </Text>
-      </View>
-      {section.items.map(({ item, good }, idx) => (
-        <ItemRow
-          key={item.id}
-          item={item}
-          good={good}
-          currency={currency}
-          editable={editable}
-          isShopping={isShopping}
-          onAdjustQty={(delta) => onAdjustQty(item, delta)}
-          onPressPrice={() => onPressPrice(item)}
-          isLast={idx === section.items.length - 1}
-          tokens={tokens}
-        />
-      ))}
-    </View>
-  );
-}
-
 function ItemRow({
   item,
   good,
   currency,
   editable,
   isShopping,
+  isActive,
+  onLongPress,
   onAdjustQty,
   onPressPrice,
-  isLast,
   tokens,
 }: {
   item: TripItem;
@@ -417,9 +381,10 @@ function ItemRow({
   currency: string;
   editable: boolean;
   isShopping: boolean;
+  isActive: boolean;
+  onLongPress?: () => void;
   onAdjustQty: (delta: number) => void;
   onPressPrice: () => void;
-  isLast: boolean;
   tokens: Theme;
 }) {
   const useActual = isShopping && item.is_checked;
@@ -431,14 +396,24 @@ function ItemRow({
   const lineTotal = useActual ? actual : planned;
 
   return (
-    <View
+    <Pressable
+      onLongPress={onLongPress}
+      delayLongPress={250}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
         padding: 14,
         gap: 12,
-        borderBottomWidth: isLast ? 0 : 1,
-        borderBottomColor: tokens.border.subtle,
+        backgroundColor: isActive ? tokens.bg.elevated : tokens.bg.surface,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: isActive ? tokens.accent.base : tokens.border.subtle,
+        marginVertical: 3,
+        shadowColor: '#000',
+        shadowOpacity: isActive ? 0.2 : 0,
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 8,
+        elevation: isActive ? 4 : 0,
       }}
     >
       <View
@@ -499,7 +474,7 @@ function ItemRow({
           {lineTotal > 0 ? `Σ ${formatMoney(lineTotal, currency)}` : 'tap price'}
         </Text>
       </Pressable>
-    </View>
+    </Pressable>
   );
 }
 
@@ -603,7 +578,7 @@ function NumpadSheet({
   }
 
   const display = text || '0';
-  const keys: ({ label: string; onPress: () => void } | null)[][] = [
+  const keys: { label: string; onPress: () => void }[][] = [
     [
       { label: '1', onPress: () => push('1') },
       { label: '2', onPress: () => push('2') },
@@ -634,10 +609,7 @@ function NumpadSheet({
       onShow={reset}
       onRequestClose={onClose}
     >
-      <Pressable
-        onPress={onClose}
-        style={{ flex: 1, backgroundColor: tokens.overlay }}
-      />
+      <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: tokens.overlay }} />
       <View
         style={{
           position: 'absolute',
@@ -689,33 +661,29 @@ function NumpadSheet({
         <View style={{ gap: 8 }}>
           {keys.map((row, i) => (
             <View key={i} style={{ flexDirection: 'row', gap: 8 }}>
-              {row.map((k, j) =>
-                k ? (
-                  <Pressable
-                    key={j}
-                    onPress={k.onPress}
-                    style={({ pressed }) => ({
-                      flex: 1,
-                      paddingVertical: 16,
-                      borderRadius: 12,
-                      alignItems: 'center',
-                      backgroundColor: pressed ? tokens.bg.elevated : tokens.bg.tonal,
-                    })}
+              {row.map((k, j) => (
+                <Pressable
+                  key={j}
+                  onPress={k.onPress}
+                  style={({ pressed }) => ({
+                    flex: 1,
+                    paddingVertical: 16,
+                    borderRadius: 12,
+                    alignItems: 'center',
+                    backgroundColor: pressed ? tokens.bg.elevated : tokens.bg.tonal,
+                  })}
+                >
+                  <Text
+                    style={{
+                      color: tokens.text.primary,
+                      fontSize: 22,
+                      fontWeight: '600',
+                    }}
                   >
-                    <Text
-                      style={{
-                        color: tokens.text.primary,
-                        fontSize: 22,
-                        fontWeight: '600',
-                      }}
-                    >
-                      {k.label}
-                    </Text>
-                  </Pressable>
-                ) : (
-                  <View key={j} style={{ flex: 1 }} />
-                ),
-              )}
+                    {k.label}
+                  </Text>
+                </Pressable>
+              ))}
             </View>
           ))}
         </View>
@@ -729,9 +697,7 @@ function NumpadSheet({
             backgroundColor: pressed ? tokens.accent.active : tokens.accent.base,
           })}
         >
-          <Text style={{ color: tokens.text.onAccent, fontWeight: '700', fontSize: 15 }}>
-            Done
-          </Text>
+          <Text style={{ color: tokens.text.onAccent, fontWeight: '700', fontSize: 15 }}>Done</Text>
         </Pressable>
       </View>
     </Modal>

@@ -1,15 +1,19 @@
+import 'react-native-gesture-handler';
 import { Redirect, Slot, useSegments } from 'expo-router';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useOnboarded } from '@/ui/hooks/useOnboarded';
 import { QueryProvider } from '@/ui/providers/QueryProvider';
 import { ThemeProvider } from '@/ui/theme/ThemeProvider';
 
 export default function RootLayout() {
   return (
-    <QueryProvider>
-      <ThemeProvider>
-        <RootGate />
-      </ThemeProvider>
-    </QueryProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryProvider>
+        <ThemeProvider>
+          <RootGate />
+        </ThemeProvider>
+      </QueryProvider>
+    </GestureHandlerRootView>
   );
 }
 
