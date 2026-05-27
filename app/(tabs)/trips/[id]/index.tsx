@@ -20,7 +20,11 @@ import {
   useStartTrip,
   useTrip,
 } from '@/ui/hooks/useTrips';
-import { useTripItems, useUpdateTripItem } from '@/ui/hooks/useTripItems';
+import {
+  useRemoveTripItem,
+  useTripItems,
+  useUpdateTripItem,
+} from '@/ui/hooks/useTripItems';
 import { Theme } from '@/ui/theme/tokens';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
@@ -53,6 +57,7 @@ export default function TripDetailScreen() {
   const { data: categories = [] } = useCategories();
   const { data: goods = [] } = useGoods();
   const updateItem = useUpdateTripItem(id);
+  const removeItem = useRemoveTripItem(id);
   const startTrip = useStartTrip(id);
   const completeTrip = useCompleteTrip(id);
   const cancelTrip = useCancelTrip(id);
@@ -239,6 +244,10 @@ export default function TripDetailScreen() {
     const field = fieldFor(item, 'qty') as 'planned_quantity' | 'actual_quantity';
     const current = item[field] ?? 0;
     const next = Math.max(0, current + delta);
+    if (next === 0 && current > 0) {
+      removeItem.mutate(item.id);
+      return;
+    }
     updateItem.mutate({ id: item.id, input: { [field]: next } });
   }
 
