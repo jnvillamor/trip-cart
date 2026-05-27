@@ -1,16 +1,16 @@
 import type Database from 'better-sqlite3';
 import { Database as AppDatabase } from '@/db/client';
-import { createStoreRepo } from '@/domain/repositories/store.repo';
+import { createCategoryRepo } from '@/domain/repositories/category.repo';
 import { makeTestDb } from './_setup';
 
-describe('store repo', () => {
+describe('category repo', () => {
   let db: AppDatabase;
   let sqlite: Database.Database;
-  let repo: ReturnType<typeof createStoreRepo>;
+  let repo: ReturnType<typeof createCategoryRepo>;
 
   beforeEach(() => {
     ({ db, sqlite } = makeTestDb());
-    repo = createStoreRepo(db);
+    repo = createCategoryRepo(db);
   });
 
   afterEach(() => {
@@ -18,16 +18,16 @@ describe('store repo', () => {
   });
 
   describe('create', () => {
-    test('persists name, override, and notes; nullifies missing optionals', async () => {
+    test('persists name, icon, and color', async () => {
       const created = await repo.create({
-        name: 'Whole Foods',
-        currency_code_override: 'USD',
-        notes: 'Downtown branch',
+        name: 'Produce',
+        icon_name: 'eco',
+        color_hex: '#4CAF50',
       });
       expect(created).toMatchObject({
-        name: 'Whole Foods',
-        currency_code_override: 'USD',
-        notes: 'Downtown branch',
+        name: 'Produce',
+        icon_name: 'eco',
+        color_hex: '#4CAF50',
         archived_at: null,
         is_archived: false,
       });
@@ -35,15 +35,20 @@ describe('store repo', () => {
     });
 
     test('omitted optional fields become null', async () => {
-      const created = await repo.create({ name: 'Corner Store' });
-      expect(created.currency_code_override).toBeNull();
-      expect(created.notes).toBeNull();
+      const created = await repo.create({ name: 'Other' });
+      expect(created.icon_name).toBeNull();
+      expect(created.color_hex).toBeNull();
+    });
+
+    test('throws on duplicate name (unique index)', async () => {
+      await repo.create({ name: 'Produce' });
+      await expect(repo.create({ name: 'Produce' })).rejects.toThrow();
     });
   });
 
   describe('findById', () => {
-    test('returns store by id', async () => {
-      const created = await repo.create({ name: 'SM' });
+    test('returns category by id', async () => {
+      const created = await repo.create({ name: 'Dairy' });
       const found = await repo.findById(created.id);
       expect(found?.id).toBe(created.id);
     });
@@ -54,13 +59,13 @@ describe('store repo', () => {
   });
 
   describe('list', () => {
-    test('returns non-archived stores ordered by name', async () => {
+    test('returns non-archived categories ordered by name', async () => {
       await repo.create({ name: 'Charlie' });
       await repo.create({ name: 'Alpha' });
       await repo.create({ name: 'Bravo' });
 
       const rows = await repo.list();
-      expect(rows.map((s) => s.name)).toEqual(['Alpha', 'Bravo', 'Charlie']);
+      expect(rows.map((c) => c.name)).toEqual(['Alpha', 'Bravo', 'Charlie']);
     });
 
     test('excludes archived by default', async () => {
@@ -69,7 +74,7 @@ describe('store repo', () => {
       await repo.archive(a.id);
 
       const rows = await repo.list();
-      expect(rows.map((s) => s.name)).toEqual(['Bravo']);
+      expect(rows.map((c) => c.name)).toEqual(['Bravo']);
     });
 
     test('includeArchived returns everything', async () => {
@@ -82,12 +87,12 @@ describe('store repo', () => {
     });
 
     test('nameQuery filters by substring (case-insensitive)', async () => {
-      await repo.create({ name: 'Whole Foods' });
-      await repo.create({ name: 'Trader Joes' });
-      await repo.create({ name: 'Whole Earth' });
+      await repo.create({ name: 'Produce' });
+      await repo.create({ name: 'Pantry' });
+      await repo.create({ name: 'Dairy' });
 
-      const rows = await repo.list({ nameQuery: 'whole' });
-      expect(rows.map((s) => s.name).sort()).toEqual(['Whole Earth', 'Whole Foods']);
+      const rows = await repo.list({ nameQuery: 'pro' });
+      expect(rows.map((c) => c.name)).toEqual(['Produce']);
     });
 
     test('nameQuery escapes LIKE wildcards', async () => {
@@ -95,7 +100,7 @@ describe('store repo', () => {
       await repo.create({ name: 'axb' });
 
       const rows = await repo.list({ nameQuery: '_' });
-      expect(rows.map((s) => s.name)).toEqual(['a_b']);
+      expect(rows.map((c) => c.name)).toEqual(['a_b']);
     });
 
     test('blank/whitespace nameQuery is ignored', async () => {
@@ -111,15 +116,15 @@ describe('store repo', () => {
     test('patches only provided fields', async () => {
       const created = await repo.create({
         name: 'Original',
-        currency_code_override: 'USD',
-        notes: 'keep me',
+        icon_name: 'eco',
+        color_hex: '#4CAF50',
       });
 
       const updated = await repo.update(created.id, { name: 'Renamed' });
       expect(updated).toMatchObject({
         name: 'Renamed',
-        currency_code_override: 'USD',
-        notes: 'keep me',
+        icon_name: 'eco',
+        color_hex: '#4CAF50',
       });
     });
 
