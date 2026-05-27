@@ -29,6 +29,7 @@ export default function TabsLayout() {
         name="trips"
         options={{
           title: 'Trips',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => tabIcon('shopping-cart', color, size),
         }}
       />

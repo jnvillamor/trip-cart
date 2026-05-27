@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
-export default function TripsScreen() {
+export default function TripsListScreen() {
   const { tokens } = useTheme();
   return (
     <View
@@ -12,7 +12,7 @@ export default function TripsScreen() {
         justifyContent: 'center',
       }}
     >
-      <Text style={{ color: tokens.text.primary }}>Trips</Text>
+      <Text style={{ color: tokens.text.primary }}>Trips list</Text>
     </View>
   );
 }
