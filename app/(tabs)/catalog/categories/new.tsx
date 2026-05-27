@@ -1,19 +1,19 @@
-import { Text, View } from 'react-native';
-import { useTheme } from '@/ui/theme/ThemeProvider';
+import { useRouter } from 'expo-router';
+import { CategoryForm } from '@/ui/components/CategoryForm';
+import { useCreateCategory } from '@/ui/hooks/useCategories';
 
 export default function NewCategoryScreen() {
-  const { tokens } = useTheme();
+  const router = useRouter();
+  const createCategory = useCreateCategory();
+
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: tokens.bg.page,
-        alignItems: 'center',
-        justifyContent: 'center',
+    <CategoryForm
+      submitLabel="Create category"
+      busy={createCategory.isPending}
+      onSubmit={async (input) => {
+        await createCategory.mutateAsync(input);
+        router.back();
       }}
-    >
-      <Text style={{ color: tokens.text.primary }}>New category form</Text>
-      <Text style={{ color: tokens.text.tertiary, marginTop: 4 }}>Phase 2A.4</Text>
-    </View>
+    />
   );
 }

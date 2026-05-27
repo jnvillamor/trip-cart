@@ -1,6 +1,7 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
+import { PageHeader } from '@/ui/components/PageHeader';
 import { Theme } from '@/ui/theme/tokens';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
@@ -21,29 +22,29 @@ const ROWS: Row[] = [
 export default function SettingsIndex() {
   const { tokens } = useTheme();
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: tokens.bg.page }}
-      contentContainerStyle={{ padding: 16 }}
-    >
-      <View
-        style={{
-          backgroundColor: tokens.bg.surface,
-          borderRadius: 12,
-          borderWidth: 1,
-          borderColor: tokens.border.subtle,
-          overflow: 'hidden',
-        }}
-      >
-        {ROWS.map((row, i) => (
-          <SettingsRow
-            key={row.href}
-            row={row}
-            isLast={i === ROWS.length - 1}
-            tokens={tokens}
-          />
-        ))}
-      </View>
-    </ScrollView>
+    <View style={{ flex: 1, backgroundColor: tokens.bg.page }}>
+      <PageHeader title="Settings" back={false} />
+      <ScrollView contentContainerStyle={{ padding: 16 }}>
+        <View
+          style={{
+            backgroundColor: tokens.bg.surface,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: tokens.border.subtle,
+            overflow: 'hidden',
+          }}
+        >
+          {ROWS.map((row, i) => (
+            <SettingsRow
+              key={row.href}
+              row={row}
+              isLast={i === ROWS.length - 1}
+              tokens={tokens}
+            />
+          ))}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 

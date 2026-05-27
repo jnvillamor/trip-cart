@@ -6,19 +6,16 @@ export default function CatalogLayout() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: tokens.bg.surface },
-        headerTintColor: tokens.text.primary,
-        headerTitleStyle: { fontWeight: '600' },
+        headerShown: false,
         contentStyle: { backgroundColor: tokens.bg.page },
       }}
     >
-      <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="goods/[id]" options={{ title: 'Good' }} />
-      <Stack.Screen name="categories/[id]" options={{ title: 'Category' }} />
+      <Stack.Screen name="index" />
+      <Stack.Screen name="goods/[id]" />
+      <Stack.Screen name="categories/[id]" />
       <Stack.Screen
         name="categories/new"
         options={{
-          title: 'New category',
           presentation: 'formSheet',
           sheetAllowedDetents: 'large',
           sheetGrabberVisible: true,

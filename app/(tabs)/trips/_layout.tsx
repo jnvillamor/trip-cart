@@ -6,18 +6,14 @@ export default function TripsLayout() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: tokens.bg.surface },
-        headerTintColor: tokens.text.primary,
+        headerShown: false,
         contentStyle: { backgroundColor: tokens.bg.page },
       }}
     >
-      <Stack.Screen name="index" options={{ title: 'Trips' }} />
-      <Stack.Screen name="new" options={{ presentation: 'modal', title: 'New trip' }} />
-      <Stack.Screen name="[id]/index" options={{ title: 'Trip' }} />
-      <Stack.Screen
-        name="[id]/add-items"
-        options={{ presentation: 'modal', title: 'Add items' }}
-      />
+      <Stack.Screen name="index" />
+      <Stack.Screen name="new" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="[id]/index" />
+      <Stack.Screen name="[id]/add-items" options={{ presentation: 'modal' }} />
     </Stack>
   );
 }

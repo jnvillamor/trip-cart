@@ -6,18 +6,16 @@ export default function SettingsLayout() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: tokens.bg.surface },
-        headerTintColor: tokens.text.primary,
-        headerTitleStyle: { fontWeight: '600' },
+        headerShown: false,
         contentStyle: { backgroundColor: tokens.bg.page },
       }}
     >
-      <Stack.Screen name="index" options={{ title: 'Settings' }} />
-      <Stack.Screen name="appearance" options={{ title: 'Appearance' }} />
-      <Stack.Screen name="currency" options={{ title: 'Currency' }} />
-      <Stack.Screen name="data" options={{ title: 'Data' }} />
-      <Stack.Screen name="ai" options={{ title: 'AI' }} />
-      <Stack.Screen name="about" options={{ title: 'About' }} />
+      <Stack.Screen name="index" />
+      <Stack.Screen name="appearance" />
+      <Stack.Screen name="currency" />
+      <Stack.Screen name="data" />
+      <Stack.Screen name="ai" />
+      <Stack.Screen name="about" />
     </Stack>
   );
 }
