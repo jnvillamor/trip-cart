@@ -311,6 +311,16 @@ export default function TripDetailScreen() {
       }}
     >
       <PageHeader title={trip.name} subtitle={store?.name} />
+      <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 }}>
+        <SummaryCard
+          trip={trip}
+          plannedTotal={plannedTotal}
+          actualTotal={actualTotal}
+          itemsBought={itemsBought}
+          itemsTotal={items.length}
+          tokens={tokens}
+        />
+      </View>
       <DraggableFlatList
         data={sortedItems}
         keyExtractor={(item) => String(item.id)}
@@ -318,22 +328,11 @@ export default function TripDetailScreen() {
         renderItem={renderRow}
         containerStyle={{ flex: 1 }}
         contentContainerStyle={{
-          padding: 16,
-          gap: 12,
+          paddingHorizontal: 16,
+          paddingTop: 8,
           paddingBottom: 24,
+          gap: 12,
         }}
-        ListHeaderComponent={
-          <View style={{ marginBottom: 4 }}>
-            <SummaryCard
-              trip={trip}
-              plannedTotal={plannedTotal}
-              actualTotal={actualTotal}
-              itemsBought={itemsBought}
-              itemsTotal={items.length}
-              tokens={tokens}
-            />
-          </View>
-        }
         ListEmptyComponent={
           <View
             style={{
