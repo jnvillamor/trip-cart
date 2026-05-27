@@ -1,7 +1,8 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { createFormHook, createFormHookContexts } from '@tanstack/react-form';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SUPPORTED_CURRENCIES } from '@/domain/currency';
+import { useCategories } from '@/ui/hooks/useCategories';
 import { Theme } from '@/ui/theme/tokens';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
@@ -55,11 +56,13 @@ function TextField({
   placeholder,
   hint,
   multiline,
+  onAfterBlur,
 }: {
   label: string;
   placeholder?: string;
   hint?: string;
   multiline?: boolean;
+  onAfterBlur?: (value: string) => void;
 }) {
   const field = useFieldContext<string>();
   const { tokens } = useTheme();
@@ -70,7 +73,10 @@ function TextField({
       <TextInput
         value={field.state.value}
         onChangeText={field.handleChange}
-        onBlur={field.handleBlur}
+        onBlur={() => {
+          field.handleBlur();
+          onAfterBlur?.(field.state.value);
+        }}
         placeholder={placeholder}
         placeholderTextColor={tokens.text.tertiary}
         multiline={multiline}
@@ -80,6 +86,95 @@ function TextField({
         ]}
       />
     </FieldShell>
+  );
+}
+
+function CategoryPickerField({ label, hint }: { label: string; hint?: string }) {
+  const field = useFieldContext<number | null>();
+  const { tokens } = useTheme();
+  const { data: categories = [] } = useCategories();
+  const first = field.state.meta.errors[0];
+  const error = typeof first === 'string' ? first : first?.message;
+  return (
+    <FieldShell label={label} hint={hint} error={error} tokens={tokens}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: 8, paddingVertical: 2 }}
+      >
+        <CategoryChip
+          label="None"
+          active={field.state.value === null}
+          onPress={() => field.handleChange(null)}
+          tokens={tokens}
+        />
+        {categories.map((c) => (
+          <CategoryChip
+            key={c.id}
+            label={c.name}
+            color={c.color_hex ?? undefined}
+            active={field.state.value === c.id}
+            onPress={() => field.handleChange(c.id)}
+            tokens={tokens}
+          />
+        ))}
+      </ScrollView>
+    </FieldShell>
+  );
+}
+
+function CategoryChip({
+  label,
+  active,
+  color,
+  onPress,
+  tokens,
+}: {
+  label: string;
+  active: boolean;
+  color?: string;
+  onPress: () => void;
+  tokens: Theme;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 999,
+        backgroundColor: active
+          ? tokens.accent.base
+          : pressed
+            ? tokens.bg.elevated
+            : tokens.bg.surface,
+        borderWidth: 1,
+        borderColor: active ? tokens.accent.base : tokens.border.subtle,
+      })}
+    >
+      {color ? (
+        <View
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: 4,
+            backgroundColor: color,
+          }}
+        />
+      ) : null}
+      <Text
+        style={{
+          color: active ? tokens.text.onAccent : tokens.text.secondary,
+          fontWeight: '600',
+          fontSize: 13,
+        }}
+      >
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 
@@ -290,6 +385,6 @@ function textInputStyle(tokens: Theme) {
 export const { useAppForm, withForm } = createFormHook({
   fieldContext,
   formContext,
-  fieldComponents: { TextField, CurrencyField, IconField, ColorField },
+  fieldComponents: { TextField, CurrencyField, IconField, ColorField, CategoryPickerField },
   formComponents: { SubmitButton },
 });

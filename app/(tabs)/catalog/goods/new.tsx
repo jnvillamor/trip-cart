@@ -1,19 +1,19 @@
-import { Text, View } from 'react-native';
-import { useTheme } from '@/ui/theme/ThemeProvider';
+import { useRouter } from 'expo-router';
+import { GoodForm } from '@/ui/components/GoodForm';
+import { useCreateGood } from '@/ui/hooks/useGoods';
 
 export default function NewGoodScreen() {
-  const { tokens } = useTheme();
+  const router = useRouter();
+  const createGood = useCreateGood();
+
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: tokens.bg.page,
-        alignItems: 'center',
-        justifyContent: 'center',
+    <GoodForm
+      submitLabel="Create good"
+      busy={createGood.isPending}
+      onSubmit={async (input) => {
+        await createGood.mutateAsync(input);
+        router.back();
       }}
-    >
-      <Text style={{ color: tokens.text.primary }}>New good form</Text>
-      <Text style={{ color: tokens.text.tertiary, marginTop: 4 }}>Phase 2A.6</Text>
-    </View>
+    />
   );
 }
