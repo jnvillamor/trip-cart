@@ -37,6 +37,7 @@ export default function TabsLayout() {
         name="catalog"
         options={{
           title: 'Catalog',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => tabIcon('inventory-2', color, size),
         }}
       />

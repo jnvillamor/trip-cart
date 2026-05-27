@@ -1,8 +1,10 @@
+import { useLocalSearchParams } from 'expo-router';
 import { Text, View } from 'react-native';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
-export default function CatalogScreen() {
+export default function GoodDetailScreen() {
   const { tokens } = useTheme();
+  const { id } = useLocalSearchParams<{ id: string }>();
   return (
     <View
       style={{
@@ -12,7 +14,8 @@ export default function CatalogScreen() {
         justifyContent: 'center',
       }}
     >
-      <Text style={{ color: tokens.text.primary }}>Catalog</Text>
+      <Text style={{ color: tokens.text.primary }}>Good detail</Text>
+      <Text style={{ color: tokens.text.secondary, marginTop: 8 }}>id: {id}</Text>
     </View>
   );
 }
