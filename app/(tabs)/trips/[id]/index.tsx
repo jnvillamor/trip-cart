@@ -1,8 +1,9 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, Text, View } from 'react-native';
 import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TRIP_STATUS_ENUM } from '@/domain/constants';
 import { Good, Trip, TripItem } from '@/domain/entities';
 import { TripStatus } from '@/domain/schemas';
@@ -22,6 +23,9 @@ import {
 import { useTripItems, useUpdateTripItem } from '@/ui/hooks/useTripItems';
 import { Theme } from '@/ui/theme/tokens';
 import { useTheme } from '@/ui/theme/ThemeProvider';
+
+const TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 49 : 56;
+const BOTTOM_BAR_HEIGHT = 80;
 
 type PriceEdit = {
   itemId: number;
@@ -55,9 +59,11 @@ export default function TripDetailScreen() {
   const duplicateTrip = useDuplicateTrip();
   const deleteTrip = useDeleteTrip();
   const { data: activeTrip } = useActiveTrip();
+  const insets = useSafeAreaInsets();
 
   const [priceEdit, setPriceEdit] = useState<PriceEdit | null>(null);
   const [confirm, setConfirm] = useState<Confirm | null>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const store = stores.find((s) => s.id === trip?.store_id);
   const categoryById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
@@ -99,6 +105,128 @@ export default function TripDetailScreen() {
   const isShopping = trip.status === TRIP_STATUS_ENUM.IN_PROGRESS;
   const editable = trip.is_editable;
   const currency = trip.resolved_currency_code;
+  const hasItems = items.length > 0;
+  const otherActiveTripId =
+    activeTrip && activeTrip.id !== trip.id ? activeTrip.id : null;
+  const canStart = !otherActiveTripId && hasItems;
+
+  const goAddItems = () => router.push(`/trips/${id}/add-items` as never);
+  const confirmStart = () =>
+    setConfirm({
+      title: 'Start shopping?',
+      message: 'You can edit actual prices and check items off as you buy them.',
+      confirmLabel: 'Start',
+      onConfirm: async () => {
+        await startTrip.mutateAsync();
+      },
+    });
+  const confirmComplete = () =>
+    setConfirm({
+      title: 'Complete this trip?',
+      message: 'Completed trips are locked. Totals will be finalized.',
+      confirmLabel: 'Complete',
+      onConfirm: async () => {
+        await completeTrip.mutateAsync();
+      },
+    });
+  const confirmCancel = () =>
+    setConfirm({
+      title: 'Cancel this trip?',
+      message: 'The trip will be marked as canceled. Items are kept for reference.',
+      confirmLabel: 'Cancel trip',
+      destructive: true,
+      onConfirm: async () => {
+        await cancelTrip.mutateAsync();
+      },
+    });
+  const doDuplicate = async () => {
+    const created = await duplicateTrip.mutateAsync(id);
+    router.replace(`/trips/${created.id}` as never);
+  };
+  const confirmDelete = () =>
+    setConfirm({
+      title: 'Delete this trip?',
+      message: 'This permanently removes the trip and all its items.',
+      confirmLabel: 'Delete',
+      destructive: true,
+      onConfirm: async () => {
+        await deleteTrip.mutateAsync(id);
+        router.back();
+      },
+    });
+
+  const primary = (() => {
+    if (!editable) {
+      return { key: 'duplicate', label: 'Duplicate', onPress: doDuplicate, disabled: false };
+    }
+    if (isShopping) {
+      return {
+        key: 'complete',
+        label: 'Complete trip',
+        onPress: confirmComplete,
+        disabled: false,
+      };
+    }
+    if (!hasItems) {
+      return { key: 'add', label: 'Add items', onPress: goAddItems, disabled: false };
+    }
+    return {
+      key: 'start',
+      label: otherActiveTripId ? 'Another trip is active' : 'Start shopping',
+      onPress: confirmStart,
+      disabled: !canStart,
+    };
+  })();
+
+  type MoreAction = {
+    key: string;
+    label: string;
+    icon: keyof typeof MaterialIcons.glyphMap;
+    onPress: () => void;
+    disabled?: boolean;
+    destructive?: boolean;
+  };
+
+  const moreActions: MoreAction[] = (() => {
+    const list: MoreAction[] = [];
+    if (editable) list.push({ key: 'add', label: 'Add items', icon: 'add', onPress: goAddItems });
+    if (trip.status === TRIP_STATUS_ENUM.PLANNED)
+      list.push({
+        key: 'start',
+        label: 'Start shopping',
+        icon: 'play-arrow',
+        onPress: confirmStart,
+        disabled: !canStart,
+      });
+    if (isShopping)
+      list.push({
+        key: 'complete',
+        label: 'Complete trip',
+        icon: 'check',
+        onPress: confirmComplete,
+      });
+    if (editable)
+      list.push({
+        key: 'cancel',
+        label: 'Cancel trip',
+        icon: 'block',
+        onPress: confirmCancel,
+      });
+    list.push({
+      key: 'duplicate',
+      label: 'Duplicate',
+      icon: 'content-copy',
+      onPress: doDuplicate,
+    });
+    list.push({
+      key: 'delete',
+      label: 'Delete trip',
+      icon: 'delete',
+      onPress: confirmDelete,
+      destructive: true,
+    });
+    return list.filter((a) => a.key !== primary.key);
+  })();
 
   function fieldFor(item: TripItem, kind: 'qty' | 'price') {
     const useActual = isShopping && item.is_checked;
@@ -175,14 +303,25 @@ export default function TripDetailScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: tokens.bg.page }}>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: tokens.bg.page,
+        paddingBottom: insets.bottom + TAB_BAR_HEIGHT,
+      }}
+    >
       <PageHeader title={trip.name} subtitle={store?.name} />
       <DraggableFlatList
         data={sortedItems}
         keyExtractor={(item) => String(item.id)}
         onDragEnd={({ data }) => handleDragEnd(data)}
         renderItem={renderRow}
-        contentContainerStyle={{ padding: 16, gap: 12 }}
+        containerStyle={{ flex: 1 }}
+        contentContainerStyle={{
+          padding: 16,
+          gap: 12,
+          paddingBottom: 24,
+        }}
         ListHeaderComponent={
           <View style={{ marginBottom: 4 }}>
             <SummaryCard
@@ -227,62 +366,20 @@ export default function TripDetailScreen() {
             </Text>
           </View>
         }
-        ListFooterComponent={
-          <StatusControls
-            trip={trip}
-            hasItems={items.length > 0}
-            otherActiveTripId={activeTrip && activeTrip.id !== trip.id ? activeTrip.id : null}
-            onAddItems={() => router.push(`/trips/${id}/add-items` as never)}
-            onStart={() => {
-              setConfirm({
-                title: 'Start shopping?',
-                message: 'You can edit actual prices and check items off as you buy them.',
-                confirmLabel: 'Start',
-                onConfirm: async () => {
-                  await startTrip.mutateAsync();
-                },
-              });
-            }}
-            onComplete={() => {
-              setConfirm({
-                title: 'Complete this trip?',
-                message: 'Completed trips are locked. Totals will be finalized.',
-                confirmLabel: 'Complete',
-                onConfirm: async () => {
-                  await completeTrip.mutateAsync();
-                },
-              });
-            }}
-            onCancel={() => {
-              setConfirm({
-                title: 'Cancel this trip?',
-                message: 'The trip will be marked as canceled. Items are kept for reference.',
-                confirmLabel: 'Cancel trip',
-                destructive: true,
-                onConfirm: async () => {
-                  await cancelTrip.mutateAsync();
-                },
-              });
-            }}
-            onDuplicate={async () => {
-              const created = await duplicateTrip.mutateAsync(id);
-              router.replace(`/trips/${created.id}` as never);
-            }}
-            onDelete={() => {
-              setConfirm({
-                title: 'Delete this trip?',
-                message: 'This permanently removes the trip and all its items.',
-                confirmLabel: 'Delete',
-                destructive: true,
-                onConfirm: async () => {
-                  await deleteTrip.mutateAsync(id);
-                  router.back();
-                },
-              });
-            }}
-            tokens={tokens}
-          />
-        }
+      />
+
+      <BottomActionBar
+        primary={primary}
+        moreCount={moreActions.length}
+        onMore={() => setMoreOpen(true)}
+        tokens={tokens}
+      />
+
+      <MoreActionsSheet
+        visible={moreOpen}
+        actions={moreActions}
+        onClose={() => setMoreOpen(false)}
+        tokens={tokens}
       />
 
       <NumpadSheet
@@ -303,190 +400,151 @@ export default function TripDetailScreen() {
   );
 }
 
-function StatusControls({
-  trip,
-  hasItems,
-  otherActiveTripId,
-  onAddItems,
-  onStart,
-  onComplete,
-  onCancel,
-  onDuplicate,
-  onDelete,
+function BottomActionBar({
+  primary,
+  moreCount,
+  onMore,
   tokens,
 }: {
-  trip: Trip;
-  hasItems: boolean;
-  otherActiveTripId: number | null;
-  onAddItems: () => void;
-  onStart: () => void;
-  onComplete: () => void;
-  onCancel: () => void;
-  onDuplicate: () => void;
-  onDelete: () => void;
+  primary: { label: string; onPress: () => void; disabled: boolean };
+  moreCount: number;
+  onMore: () => void;
   tokens: Theme;
 }) {
-  const status = trip.status;
-  const isPlanned = status === TRIP_STATUS_ENUM.PLANNED;
-  const isShopping = status === TRIP_STATUS_ENUM.IN_PROGRESS;
-  const isTerminal = !trip.is_editable;
-
-  const startLabel = otherActiveTripId
-    ? 'Another trip is active'
-    : !hasItems
-      ? 'Add an item to start'
-      : 'Start shopping';
-  const startDisabled = !!otherActiveTripId || !hasItems;
-
   return (
-    <View style={{ marginTop: 16, gap: 12 }}>
-      {!isTerminal ? (
-        <PrimaryButton label="Add items" onPress={onAddItems} tokens={tokens} />
-      ) : null}
-
-      {isPlanned ? (
-        <SecondaryButton
-          label={startLabel}
-          disabled={startDisabled}
-          onPress={onStart}
-          tokens={tokens}
-        />
-      ) : null}
-      {isShopping ? (
-        <SecondaryButton label="Complete trip" onPress={onComplete} tokens={tokens} />
-      ) : null}
-
-      <View style={{ flexDirection: 'row', gap: 12 }}>
-        {!isTerminal ? (
-          <FlexButton
-            label="Cancel trip"
-            onPress={onCancel}
-            tone="warning"
-            tokens={tokens}
-          />
-        ) : null}
-        <FlexButton label="Duplicate" onPress={onDuplicate} tone="tonal" tokens={tokens} />
-      </View>
-
+    <View
+      style={{
+        flexDirection: 'row',
+        gap: 10,
+        padding: 12,
+        backgroundColor: tokens.bg.surface,
+        borderTopWidth: 1,
+        borderTopColor: tokens.border.subtle,
+      }}
+    >
       <Pressable
-        onPress={onDelete}
+        onPress={primary.onPress}
+        disabled={primary.disabled}
         style={({ pressed }) => ({
+          flex: 1,
           paddingVertical: 14,
           borderRadius: 14,
           alignItems: 'center',
-          backgroundColor: pressed ? tokens.danger[10] : tokens.danger[0],
+          backgroundColor: pressed ? tokens.accent.active : tokens.accent.base,
+          opacity: primary.disabled ? 0.5 : 1,
         })}
       >
         <Text style={{ color: tokens.text.onAccent, fontWeight: '700', fontSize: 15 }}>
-          Delete trip
+          {primary.label}
         </Text>
       </Pressable>
+      {moreCount > 0 ? (
+        <Pressable
+          onPress={onMore}
+          accessibilityLabel="More actions"
+          style={({ pressed }) => ({
+            width: 50,
+            paddingVertical: 14,
+            borderRadius: 14,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: pressed ? tokens.bg.elevated : tokens.bg.tonal,
+            borderWidth: 1,
+            borderColor: tokens.border.subtle,
+          })}
+        >
+          <MaterialIcons name="more-horiz" color={tokens.text.primary} size={22} />
+        </Pressable>
+      ) : null}
     </View>
   );
 }
 
-function PrimaryButton({
-  label,
-  disabled,
-  onPress,
-  tokens,
-}: {
+type MoreAction = {
+  key: string;
   label: string;
-  disabled?: boolean;
-  onPress: () => void;
-  tokens: Theme;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      style={({ pressed }) => ({
-        paddingVertical: 14,
-        borderRadius: 14,
-        alignItems: 'center',
-        backgroundColor: pressed ? tokens.accent.active : tokens.accent.base,
-        opacity: disabled ? 0.5 : 1,
-      })}
-    >
-      <Text style={{ color: tokens.text.onAccent, fontWeight: '700', fontSize: 15 }}>
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
-
-function SecondaryButton({
-  label,
-  onPress,
-  disabled,
-  tokens,
-}: {
-  label: string;
+  icon: keyof typeof MaterialIcons.glyphMap;
   onPress: () => void;
   disabled?: boolean;
-  tokens: Theme;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      style={({ pressed }) => ({
-        paddingVertical: 12,
-        borderRadius: 12,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: tokens.border.default,
-        backgroundColor: pressed ? tokens.bg.elevated : tokens.bg.surface,
-        opacity: disabled ? 0.5 : 1,
-      })}
-    >
-      <Text style={{ color: tokens.text.primary, fontWeight: '600', fontSize: 14 }}>
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
+  destructive?: boolean;
+};
 
-function FlexButton({
-  label,
-  onPress,
-  tone = 'plain',
+function MoreActionsSheet({
+  visible,
+  actions,
+  onClose,
   tokens,
 }: {
-  label: string;
-  onPress: () => void;
-  tone?: 'plain' | 'warning' | 'tonal';
+  visible: boolean;
+  actions: MoreAction[];
+  onClose: () => void;
   tokens: Theme;
 }) {
-  const bg =
-    tone === 'warning'
-      ? tokens.warning[0]
-      : tone === 'tonal'
-        ? tokens.bg.tonal
-        : 'transparent';
-  const bgPressed =
-    tone === 'warning'
-      ? tokens.warning[10]
-      : tone === 'tonal'
-        ? tokens.bg.elevated
-        : tokens.bg.elevated;
-  const fg = tone === 'warning' ? tokens.text.onAccent : tokens.text.primary;
-  const border = tone === 'plain' ? tokens.border.subtle : 'transparent';
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        flex: 1,
-        paddingVertical: 12,
-        borderRadius: 12,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: border,
-        backgroundColor: pressed ? bgPressed : bg,
-      })}
-    >
-      <Text style={{ color: fg, fontWeight: '600', fontSize: 13 }}>{label}</Text>
-    </Pressable>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: tokens.overlay }} />
+      <View
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: tokens.bg.surface,
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
+          paddingTop: 8,
+          paddingBottom: 36,
+          paddingHorizontal: 12,
+        }}
+      >
+        <View
+          style={{
+            alignSelf: 'center',
+            width: 36,
+            height: 4,
+            borderRadius: 2,
+            backgroundColor: tokens.border.default,
+            marginBottom: 12,
+          }}
+        />
+        {actions.map((a) => (
+          <Pressable
+            key={a.key}
+            onPress={() => {
+              if (a.disabled) return;
+              onClose();
+              a.onPress();
+            }}
+            disabled={a.disabled}
+            style={({ pressed }) => ({
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 14,
+              paddingHorizontal: 14,
+              paddingVertical: 14,
+              borderRadius: 14,
+              backgroundColor: pressed ? tokens.bg.elevated : 'transparent',
+              opacity: a.disabled ? 0.4 : 1,
+            })}
+          >
+            <MaterialIcons
+              name={a.icon}
+              color={a.destructive ? tokens.danger[0] : tokens.text.primary}
+              size={20}
+            />
+            <Text
+              style={{
+                color: a.destructive ? tokens.danger[0] : tokens.text.primary,
+                fontSize: 15,
+                fontWeight: '500',
+              }}
+            >
+              {a.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+    </Modal>
   );
 }
 
