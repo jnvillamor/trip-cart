@@ -22,6 +22,7 @@ export const UpdateTripInputSchema = z.object({
   name: requireName('Trip name').optional(),
   status: TripStatusSchema.optional(),
   planned_for: z.date().optional(),
+  started_at: z.date().optional(),
   completed_at: z.date().optional(),
   notes: optionalNotes,
 });
