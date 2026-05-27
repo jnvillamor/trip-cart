@@ -13,7 +13,7 @@ export function ActiveTripBanner() {
 
   return (
     <Pressable
-      onPress={() => router.push(`/trips/${activeTrip.id}/shopping` as never)}
+      onPress={() => router.push(`/shopping/${activeTrip.id}` as never)}
       style={({ pressed }) => ({
         backgroundColor: pressed ? tokens.accent.active : tokens.accent.base,
         paddingHorizontal: 16,

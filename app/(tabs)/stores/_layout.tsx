@@ -12,7 +12,7 @@ export default function StoresLayout() {
         contentStyle: { backgroundColor: tokens.bg.page },
       }}
     >
-      <Stack.Screen name="index" options={{ title: 'Stores' }} />
+      <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="new" options={{ title: 'New store' }} />
       <Stack.Screen name="[id]" options={{ title: 'Store' }} />
     </Stack>

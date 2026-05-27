@@ -3,16 +3,20 @@ import { FlashList } from '@shopify/flash-list';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, Switch, Text, View } from 'react-native';
+import { Platform, Pressable, Switch, Text, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { initDatabase } from '@/db/client';
 import { Store } from '@/domain/entities';
 import { createStoreRepo } from '@/domain/repositories/store.repo';
 import { Theme } from '@/ui/theme/tokens';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
+const TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 49 : 56;
+
 export default function StoresListScreen() {
   const { tokens } = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [showArchived, setShowArchived] = useState(false);
 
   const { data: stores = [], isLoading } = useQuery({
@@ -26,55 +30,66 @@ export default function StoresListScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg.page }}>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          paddingHorizontal: 16,
-          paddingVertical: 12,
-          backgroundColor: tokens.bg.surface,
-          borderBottomWidth: 1,
-          borderBottomColor: tokens.border.subtle,
-        }}
-      >
-        <Text style={{ color: tokens.text.secondary, fontSize: 13 }}>Show archived</Text>
-        <Switch
-          value={showArchived}
-          onValueChange={setShowArchived}
-          trackColor={{ false: tokens.border.default, true: tokens.accent.base }}
-          thumbColor={tokens.bg.page}
-        />
-      </View>
+      <SafeAreaView edges={['top']}>
+        <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12 }}>
+          <Text
+            style={{
+              color: tokens.text.primary,
+              fontSize: 34,
+              fontWeight: '700',
+              letterSpacing: -0.5,
+            }}
+          >
+            Stores
+          </Text>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginTop: 16,
+            }}
+          >
+            <Text style={{ color: tokens.text.secondary, fontSize: 14 }}>Show archived</Text>
+            <Switch
+              value={showArchived}
+              onValueChange={setShowArchived}
+              trackColor={{ false: tokens.border.default, true: tokens.accent.base }}
+              thumbColor={tokens.bg.page}
+            />
+          </View>
+        </View>
+      </SafeAreaView>
 
       <FlashList
         data={stores}
         keyExtractor={(item) => String(item.id)}
-        estimatedItemSize={64}
+        estimatedItemSize={92}
         renderItem={({ item }) => (
-          <StoreRow
+          <StoreCard
             store={item}
             tokens={tokens}
             onPress={() => router.push(`/stores/${item.id}` as never)}
           />
         )}
-        ItemSeparatorComponent={() => (
-          <View
-            style={{ height: 1, backgroundColor: tokens.border.subtle, marginLeft: 16 }}
-          />
-        )}
         ListEmptyComponent={!isLoading ? <EmptyState tokens={tokens} /> : null}
-        contentContainerStyle={
-          stores.length === 0 ? undefined : { backgroundColor: tokens.bg.surface }
-        }
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: 8,
+          paddingBottom: insets.bottom + TAB_BAR_HEIGHT + 96,
+        }}
       />
 
-      <FAB onPress={() => router.push('/stores/new' as never)} tokens={tokens} />
+      <FAB
+        onPress={() => router.push('/stores/new' as never)}
+        tokens={tokens}
+        bottomOffset={insets.bottom + TAB_BAR_HEIGHT + 16}
+      />
     </View>
   );
 }
 
-function StoreRow({
+function StoreCard({
   store,
   tokens,
   onPress,
@@ -83,24 +98,52 @@ function StoreRow({
   tokens: Theme;
   onPress: () => void;
 }) {
+  const initial = store.name.charAt(0).toUpperCase();
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => ({
-        backgroundColor: pressed ? tokens.bg.elevated : tokens.bg.surface,
+        backgroundColor: tokens.bg.surface,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: tokens.border.subtle,
+        marginVertical: 6,
+        padding: 16,
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 16,
-        gap: 12,
+        gap: 14,
+        opacity: pressed ? 0.7 : 1,
       })}
     >
-      <View style={{ flex: 1 }}>
-        <Text style={{ color: tokens.text.primary, fontSize: 15, fontWeight: '500' }}>
-          {store.name}
+      <View
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: 14,
+          backgroundColor: tokens.bg.tonal,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Text style={{ color: tokens.accent.base, fontSize: 18, fontWeight: '700' }}>
+          {initial}
         </Text>
+      </View>
+      <View style={{ flex: 1 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Text
+            style={{ color: tokens.text.primary, fontSize: 16, fontWeight: '600' }}
+            numberOfLines={1}
+          >
+            {store.name}
+          </Text>
+          {store.is_archived ? (
+            <MaterialIcons name="archive" color={tokens.text.tertiary} size={14} />
+          ) : null}
+        </View>
         {store.notes ? (
           <Text
-            style={{ color: tokens.text.tertiary, fontSize: 12, marginTop: 2 }}
+            style={{ color: tokens.text.tertiary, fontSize: 13, marginTop: 2 }}
             numberOfLines={1}
           >
             {store.notes}
@@ -111,20 +154,16 @@ function StoreRow({
         <View
           style={{
             backgroundColor: tokens.bg.tonal,
-            paddingHorizontal: 8,
-            paddingVertical: 4,
-            borderRadius: 4,
+            paddingHorizontal: 10,
+            paddingVertical: 5,
+            borderRadius: 8,
           }}
         >
-          <Text style={{ color: tokens.text.secondary, fontSize: 11, fontWeight: '600' }}>
+          <Text style={{ color: tokens.text.secondary, fontSize: 11, fontWeight: '700' }}>
             {store.currency_code_override}
           </Text>
         </View>
       ) : null}
-      {store.is_archived ? (
-        <MaterialIcons name="archive" color={tokens.text.tertiary} size={16} />
-      ) : null}
-      <MaterialIcons name="chevron-right" color={tokens.text.tertiary} size={20} />
     </Pressable>
   );
 }
@@ -133,63 +172,78 @@ function EmptyState({ tokens }: { tokens: Theme }) {
   return (
     <View
       style={{
-        flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 24,
-        minHeight: 320,
+        paddingVertical: 64,
+        paddingHorizontal: 24,
       }}
     >
       <View
         style={{
-          width: 72,
-          height: 72,
-          borderRadius: 36,
+          width: 88,
+          height: 88,
+          borderRadius: 44,
           backgroundColor: tokens.bg.tonal,
           alignItems: 'center',
           justifyContent: 'center',
-          marginBottom: 16,
+          marginBottom: 20,
         }}
       >
-        <MaterialIcons name="storefront" color={tokens.text.tertiary} size={36} />
+        <MaterialIcons name="storefront" color={tokens.text.tertiary} size={44} />
       </View>
-      <Text style={{ color: tokens.text.primary, fontSize: 16, fontWeight: '600' }}>
+      <Text
+        style={{
+          color: tokens.text.primary,
+          fontSize: 18,
+          fontWeight: '700',
+          letterSpacing: -0.2,
+        }}
+      >
         No stores yet
       </Text>
       <Text
         style={{
           color: tokens.text.tertiary,
-          marginTop: 6,
-          fontSize: 13,
+          marginTop: 8,
+          fontSize: 14,
           textAlign: 'center',
+          lineHeight: 20,
         }}
       >
-        Add a store to start planning trips.
+        Add your first store to start planning trips.
       </Text>
     </View>
   );
 }
 
-function FAB({ onPress, tokens }: { onPress: () => void; tokens: Theme }) {
+function FAB({
+  onPress,
+  tokens,
+  bottomOffset,
+}: {
+  onPress: () => void;
+  tokens: Theme;
+  bottomOffset: number;
+}) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityLabel="Add store"
       style={({ pressed }) => ({
         position: 'absolute',
-        right: 24,
-        bottom: 24,
+        right: 20,
+        bottom: bottomOffset,
         width: 56,
         height: 56,
-        borderRadius: 28,
+        borderRadius: 18,
         backgroundColor: pressed ? tokens.accent.active : tokens.accent.base,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 6,
+        shadowColor: tokens.accent.base,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.35,
+        shadowRadius: 12,
+        elevation: 8,
       })}
     >
       <MaterialIcons name="add" color={tokens.text.onAccent} size={28} />
