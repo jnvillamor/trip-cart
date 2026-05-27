@@ -1,64 +1,36 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useTheme } from '@/ui/theme/ThemeProvider';
-
-type IconName = keyof typeof MaterialIcons.glyphMap;
 
 export default function TabsLayout() {
   const { tokens } = useTheme();
-
   return (
-    <Tabs
-      initialRouteName="index"
-      screenOptions={{
-        headerStyle: { backgroundColor: tokens.bg.surface },
-        headerTintColor: tokens.text.primary,
-        tabBarStyle: {
-          backgroundColor: tokens.bg.surface,
-          borderTopColor: tokens.border.subtle,
-        },
-        tabBarActiveTintColor: tokens.accent.base,
-        tabBarInactiveTintColor: tokens.text.tertiary,
-      }}
+    <NativeTabs
+      backgroundColor={tokens.bg.surface}
+      tintColor={tokens.accent.base}
+      iconColor={{ default: tokens.text.tertiary, selected: tokens.accent.base }}
+      labelStyle={{ color: tokens.text.tertiary }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{ title: 'Home', tabBarIcon: ({ color, size }) => tabIcon('home', color, size) }}
-      />
-      <Tabs.Screen
-        name="trips"
-        options={{
-          title: 'Trips',
-          headerShown: false,
-          tabBarIcon: ({ color, size }) => tabIcon('shopping-cart', color, size),
-        }}
-      />
-      <Tabs.Screen
-        name="catalog"
-        options={{
-          title: 'Catalog',
-          headerShown: false,
-          tabBarIcon: ({ color, size }) => tabIcon('inventory-2', color, size),
-        }}
-      />
-      <Tabs.Screen
-        name="insights"
-        options={{
-          title: 'Insights',
-          tabBarIcon: ({ color, size }) => tabIcon('insights', color, size),
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: 'Settings',
-          tabBarIcon: ({ color, size }) => tabIcon('settings', color, size),
-        }}
-      />
-    </Tabs>
+      <NativeTabs.Trigger name="index">
+        <Icon sf="house.fill" androidSrc={<MaterialIcons name="home" />} />
+        <Label>Home</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="trips">
+        <Icon sf="cart.fill" androidSrc={<MaterialIcons name="shopping-cart" />} />
+        <Label>Trips</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="catalog">
+        <Icon sf="shippingbox.fill" androidSrc={<MaterialIcons name="inventory-2" />} />
+        <Label>Catalog</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="insights">
+        <Icon sf="chart.bar.fill" androidSrc={<MaterialIcons name="insights" />} />
+        <Label>Insights</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="settings">
+        <Icon sf="gearshape.fill" androidSrc={<MaterialIcons name="settings" />} />
+        <Label>Settings</Label>
+      </NativeTabs.Trigger>
+    </NativeTabs>
   );
-}
-
-function tabIcon(name: IconName, color: string, size: number) {
-  return <MaterialIcons name={name} color={color} size={size} />;
 }
