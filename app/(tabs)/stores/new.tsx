@@ -1,19 +1,19 @@
-import { Text, View } from 'react-native';
-import { useTheme } from '@/ui/theme/ThemeProvider';
+import { useRouter } from 'expo-router';
+import { StoreForm } from '@/ui/components/StoreForm';
+import { useCreateStore } from '@/ui/hooks/useStores';
 
 export default function NewStoreScreen() {
-  const { tokens } = useTheme();
+  const router = useRouter();
+  const createStore = useCreateStore();
+
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: tokens.bg.page,
-        alignItems: 'center',
-        justifyContent: 'center',
+    <StoreForm
+      submitLabel="Create store"
+      busy={createStore.isPending}
+      onSubmit={async (input) => {
+        await createStore.mutateAsync(input);
+        router.back();
       }}
-    >
-      <Text style={{ color: tokens.text.primary }}>New store form</Text>
-      <Text style={{ color: tokens.text.tertiary, marginTop: 4 }}>Phase 2A.2</Text>
-    </View>
+    />
   );
 }

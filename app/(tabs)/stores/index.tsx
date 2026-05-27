@@ -1,13 +1,11 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
-import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Platform, Pressable, Switch, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { initDatabase } from '@/db/client';
 import { Store } from '@/domain/entities';
-import { createStoreRepo } from '@/domain/repositories/store.repo';
+import { useStores } from '@/ui/hooks/useStores';
 import { Theme } from '@/ui/theme/tokens';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
@@ -19,14 +17,7 @@ export default function StoresListScreen() {
   const insets = useSafeAreaInsets();
   const [showArchived, setShowArchived] = useState(false);
 
-  const { data: stores = [], isLoading } = useQuery({
-    queryKey: ['stores', { archived: showArchived }],
-    queryFn: async () => {
-      const db = await initDatabase();
-      const repo = createStoreRepo(db);
-      return repo.list({ includeArchived: showArchived });
-    },
-  });
+  const { data: stores = [], isLoading } = useStores({ archived: showArchived });
 
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg.page }}>
@@ -246,7 +237,17 @@ function FAB({
         elevation: 8,
       })}
     >
-      <MaterialIcons name="add" color={tokens.text.onAccent} size={28} />
+      <Text
+        style={{
+          color: tokens.text.onAccent,
+          fontSize: 30,
+          fontWeight: '400',
+          lineHeight: 32,
+          marginTop: -2,
+        }}
+      >
+        +
+      </Text>
     </Pressable>
   );
 }
