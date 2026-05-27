@@ -10,7 +10,15 @@ import { PageHeader } from '@/ui/components/PageHeader';
 import { useCategories } from '@/ui/hooks/useCategories';
 import { useGoods } from '@/ui/hooks/useGoods';
 import { useStores } from '@/ui/hooks/useStores';
-import { useTrip } from '@/ui/hooks/useTrips';
+import { useActiveTrip } from '@/ui/hooks/useActiveTrip';
+import {
+  useCancelTrip,
+  useCompleteTrip,
+  useDeleteTrip,
+  useDuplicateTrip,
+  useStartTrip,
+  useTrip,
+} from '@/ui/hooks/useTrips';
 import { useTripItems, useUpdateTripItem } from '@/ui/hooks/useTripItems';
 import { Theme } from '@/ui/theme/tokens';
 import { useTheme } from '@/ui/theme/ThemeProvider';
@@ -19,6 +27,14 @@ type PriceEdit = {
   itemId: number;
   field: 'planned_unit_price' | 'actual_unit_price';
   initial: number;
+};
+
+type Confirm = {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  destructive?: boolean;
+  onConfirm: () => Promise<void> | void;
 };
 
 export default function TripDetailScreen() {
@@ -33,8 +49,15 @@ export default function TripDetailScreen() {
   const { data: categories = [] } = useCategories();
   const { data: goods = [] } = useGoods();
   const updateItem = useUpdateTripItem(id);
+  const startTrip = useStartTrip(id);
+  const completeTrip = useCompleteTrip(id);
+  const cancelTrip = useCancelTrip(id);
+  const duplicateTrip = useDuplicateTrip();
+  const deleteTrip = useDeleteTrip();
+  const { data: activeTrip } = useActiveTrip();
 
   const [priceEdit, setPriceEdit] = useState<PriceEdit | null>(null);
+  const [confirm, setConfirm] = useState<Confirm | null>(null);
 
   const store = stores.find((s) => s.id === trip?.store_id);
   const categoryById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
@@ -205,20 +228,60 @@ export default function TripDetailScreen() {
           </View>
         }
         ListFooterComponent={
-          <Pressable
-            onPress={() => router.push(`/trips/${id}/add-items` as never)}
-            style={({ pressed }) => ({
-              marginTop: 16,
-              paddingVertical: 14,
-              borderRadius: 14,
-              alignItems: 'center',
-              backgroundColor: pressed ? tokens.accent.active : tokens.accent.base,
-            })}
-          >
-            <Text style={{ color: tokens.text.onAccent, fontWeight: '700', fontSize: 15 }}>
-              Add items
-            </Text>
-          </Pressable>
+          <StatusControls
+            trip={trip}
+            hasItems={items.length > 0}
+            otherActiveTripId={activeTrip && activeTrip.id !== trip.id ? activeTrip.id : null}
+            onAddItems={() => router.push(`/trips/${id}/add-items` as never)}
+            onStart={() => {
+              setConfirm({
+                title: 'Start shopping?',
+                message: 'You can edit actual prices and check items off as you buy them.',
+                confirmLabel: 'Start',
+                onConfirm: async () => {
+                  await startTrip.mutateAsync();
+                },
+              });
+            }}
+            onComplete={() => {
+              setConfirm({
+                title: 'Complete this trip?',
+                message: 'Completed trips are locked. Totals will be finalized.',
+                confirmLabel: 'Complete',
+                onConfirm: async () => {
+                  await completeTrip.mutateAsync();
+                },
+              });
+            }}
+            onCancel={() => {
+              setConfirm({
+                title: 'Cancel this trip?',
+                message: 'The trip will be marked as canceled. Items are kept for reference.',
+                confirmLabel: 'Cancel trip',
+                destructive: true,
+                onConfirm: async () => {
+                  await cancelTrip.mutateAsync();
+                },
+              });
+            }}
+            onDuplicate={async () => {
+              const created = await duplicateTrip.mutateAsync(id);
+              router.replace(`/trips/${created.id}` as never);
+            }}
+            onDelete={() => {
+              setConfirm({
+                title: 'Delete this trip?',
+                message: 'This permanently removes the trip and all its items.',
+                confirmLabel: 'Delete',
+                destructive: true,
+                onConfirm: async () => {
+                  await deleteTrip.mutateAsync(id);
+                  router.back();
+                },
+              });
+            }}
+            tokens={tokens}
+          />
         }
       />
 
@@ -230,7 +293,299 @@ export default function TripDetailScreen() {
         onClose={() => setPriceEdit(null)}
         tokens={tokens}
       />
+
+      <ConfirmDialog
+        confirm={confirm}
+        onClose={() => setConfirm(null)}
+        tokens={tokens}
+      />
     </View>
+  );
+}
+
+function StatusControls({
+  trip,
+  hasItems,
+  otherActiveTripId,
+  onAddItems,
+  onStart,
+  onComplete,
+  onCancel,
+  onDuplicate,
+  onDelete,
+  tokens,
+}: {
+  trip: Trip;
+  hasItems: boolean;
+  otherActiveTripId: number | null;
+  onAddItems: () => void;
+  onStart: () => void;
+  onComplete: () => void;
+  onCancel: () => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
+  tokens: Theme;
+}) {
+  const status = trip.status;
+  const isPlanned = status === TRIP_STATUS_ENUM.PLANNED;
+  const isShopping = status === TRIP_STATUS_ENUM.IN_PROGRESS;
+  const isTerminal = !trip.is_editable;
+
+  const startLabel = otherActiveTripId
+    ? 'Another trip is active'
+    : !hasItems
+      ? 'Add an item to start'
+      : 'Start shopping';
+  const startDisabled = !!otherActiveTripId || !hasItems;
+
+  return (
+    <View style={{ marginTop: 16, gap: 12 }}>
+      {!isTerminal ? (
+        <PrimaryButton label="Add items" onPress={onAddItems} tokens={tokens} />
+      ) : null}
+
+      {isPlanned ? (
+        <SecondaryButton
+          label={startLabel}
+          disabled={startDisabled}
+          onPress={onStart}
+          tokens={tokens}
+        />
+      ) : null}
+      {isShopping ? (
+        <SecondaryButton label="Complete trip" onPress={onComplete} tokens={tokens} />
+      ) : null}
+
+      <View style={{ flexDirection: 'row', gap: 12 }}>
+        {!isTerminal ? (
+          <FlexButton
+            label="Cancel trip"
+            onPress={onCancel}
+            tone="warning"
+            tokens={tokens}
+          />
+        ) : null}
+        <FlexButton label="Duplicate" onPress={onDuplicate} tone="tonal" tokens={tokens} />
+      </View>
+
+      <Pressable
+        onPress={onDelete}
+        style={({ pressed }) => ({
+          paddingVertical: 14,
+          borderRadius: 14,
+          alignItems: 'center',
+          backgroundColor: pressed ? tokens.danger[10] : tokens.danger[0],
+        })}
+      >
+        <Text style={{ color: tokens.text.onAccent, fontWeight: '700', fontSize: 15 }}>
+          Delete trip
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
+function PrimaryButton({
+  label,
+  disabled,
+  onPress,
+  tokens,
+}: {
+  label: string;
+  disabled?: boolean;
+  onPress: () => void;
+  tokens: Theme;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      style={({ pressed }) => ({
+        paddingVertical: 14,
+        borderRadius: 14,
+        alignItems: 'center',
+        backgroundColor: pressed ? tokens.accent.active : tokens.accent.base,
+        opacity: disabled ? 0.5 : 1,
+      })}
+    >
+      <Text style={{ color: tokens.text.onAccent, fontWeight: '700', fontSize: 15 }}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function SecondaryButton({
+  label,
+  onPress,
+  disabled,
+  tokens,
+}: {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  tokens: Theme;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      style={({ pressed }) => ({
+        paddingVertical: 12,
+        borderRadius: 12,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: tokens.border.default,
+        backgroundColor: pressed ? tokens.bg.elevated : tokens.bg.surface,
+        opacity: disabled ? 0.5 : 1,
+      })}
+    >
+      <Text style={{ color: tokens.text.primary, fontWeight: '600', fontSize: 14 }}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function FlexButton({
+  label,
+  onPress,
+  tone = 'plain',
+  tokens,
+}: {
+  label: string;
+  onPress: () => void;
+  tone?: 'plain' | 'warning' | 'tonal';
+  tokens: Theme;
+}) {
+  const bg =
+    tone === 'warning'
+      ? tokens.warning[0]
+      : tone === 'tonal'
+        ? tokens.bg.tonal
+        : 'transparent';
+  const bgPressed =
+    tone === 'warning'
+      ? tokens.warning[10]
+      : tone === 'tonal'
+        ? tokens.bg.elevated
+        : tokens.bg.elevated;
+  const fg = tone === 'warning' ? tokens.text.onAccent : tokens.text.primary;
+  const border = tone === 'plain' ? tokens.border.subtle : 'transparent';
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        flex: 1,
+        paddingVertical: 12,
+        borderRadius: 12,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: border,
+        backgroundColor: pressed ? bgPressed : bg,
+      })}
+    >
+      <Text style={{ color: fg, fontWeight: '600', fontSize: 13 }}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function ConfirmDialog({
+  confirm,
+  onClose,
+  tokens,
+}: {
+  confirm: Confirm | null;
+  onClose: () => void;
+  tokens: Theme;
+}) {
+  return (
+    <Modal
+      visible={confirm !== null}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <Pressable
+        onPress={onClose}
+        style={{
+          flex: 1,
+          backgroundColor: tokens.overlay,
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 24,
+        }}
+      >
+        <Pressable
+          onPress={(e) => e.stopPropagation()}
+          style={{
+            backgroundColor: tokens.bg.surface,
+            borderRadius: 18,
+            padding: 22,
+            gap: 16,
+            width: '100%',
+            maxWidth: 380,
+          }}
+        >
+          <View style={{ gap: 6 }}>
+            <Text style={{ color: tokens.text.primary, fontSize: 18, fontWeight: '700' }}>
+              {confirm?.title}
+            </Text>
+            <Text style={{ color: tokens.text.secondary, fontSize: 14, lineHeight: 20 }}>
+              {confirm?.message}
+            </Text>
+          </View>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <Pressable
+              onPress={onClose}
+              style={({ pressed }) => ({
+                flex: 1,
+                paddingVertical: 12,
+                borderRadius: 12,
+                alignItems: 'center',
+                borderWidth: 1,
+                borderColor: tokens.border.default,
+                backgroundColor: pressed ? tokens.bg.elevated : 'transparent',
+              })}
+            >
+              <Text style={{ color: tokens.text.primary, fontWeight: '600', fontSize: 14 }}>
+                Cancel
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={async () => {
+                if (!confirm) return;
+                await confirm.onConfirm();
+                onClose();
+              }}
+              style={({ pressed }) => ({
+                flex: 1,
+                paddingVertical: 12,
+                borderRadius: 12,
+                alignItems: 'center',
+                backgroundColor: confirm?.destructive
+                  ? pressed
+                    ? tokens.danger[10]
+                    : tokens.danger[0]
+                  : pressed
+                    ? tokens.accent.active
+                    : tokens.accent.base,
+              })}
+            >
+              <Text
+                style={{
+                  color: confirm?.destructive ? '#fff' : tokens.text.onAccent,
+                  fontWeight: '700',
+                  fontSize: 14,
+                }}
+              >
+                {confirm?.confirmLabel ?? 'Confirm'}
+              </Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
 
