@@ -33,9 +33,15 @@ export function useCreateTripItem(tripId: number) {
 export function useUpdateTripItem(tripId: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, input }: { id: number; input: UpdateTripItemInput }) => {
+    mutationFn: async ({
+      id,
+      input,
+    }: {
+      id: number;
+      input: Partial<UpdateTripItemInput>;
+    }) => {
       const repo = await getRepo();
-      return repo.update(id, input);
+      return repo.update(id, input as UpdateTripItemInput);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['trip-items', tripId] }),
   });
