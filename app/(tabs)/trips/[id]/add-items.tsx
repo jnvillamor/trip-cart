@@ -7,10 +7,17 @@ import { Good } from '@/domain/entities';
 import { PageHeader } from '@/ui/components/PageHeader';
 import { useCategories } from '@/ui/hooks/useCategories';
 import { useDebouncedValue } from '@/ui/hooks/useDebouncedValue';
-import { useGoods } from '@/ui/hooks/useGoods';
+import { useGoods, useGoodSuggestionsForStore } from '@/ui/hooks/useGoods';
+import { useTrip } from '@/ui/hooks/useTrips';
 import { useCreateTripItem, useTripItems } from '@/ui/hooks/useTripItems';
 import { Theme } from '@/ui/theme/tokens';
 import { useTheme } from '@/ui/theme/ThemeProvider';
+
+const MAX_SUGGESTIONS = 6;
+
+type Row =
+  | { kind: 'section'; key: string; label: string }
+  | { kind: 'good'; key: string; good: Good };
 
 export default function AddItemsScreen() {
   const { tokens } = useTheme();
@@ -20,13 +27,41 @@ export default function AddItemsScreen() {
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebouncedValue(query, 150);
 
+  const { data: trip } = useTrip(tripId);
   const { data: goods = [], isLoading } = useGoods({ nameQuery: debouncedQuery });
   const { data: categories = [] } = useCategories();
   const { data: items = [] } = useTripItems(tripId);
+  const { data: suggestionCounts } = useGoodSuggestionsForStore(trip?.store_id, tripId);
   const createItem = useCreateTripItem(tripId);
 
   const categoryById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
   const addedGoodIds = useMemo(() => new Set(items.map((i) => i.good_id)), [items]);
+
+  const rows = useMemo<Row[]>(() => {
+    const isSearching = debouncedQuery.trim().length > 0;
+    if (isSearching) {
+      return goods.map((g) => ({ kind: 'good', key: `g-${g.id}`, good: g }));
+    }
+    const counts = suggestionCounts ?? new Map<number, number>();
+    const suggested = goods
+      .filter((g) => counts.has(g.id))
+      .sort((a, b) => (counts.get(b.id) ?? 0) - (counts.get(a.id) ?? 0))
+      .slice(0, MAX_SUGGESTIONS);
+    const suggestedIds = new Set(suggested.map((g) => g.id));
+    const rest = goods.filter((g) => !suggestedIds.has(g.id));
+    const out: Row[] = [];
+    if (suggested.length > 0) {
+      out.push({
+        kind: 'section',
+        key: 'sec-suggested',
+        label: 'Frequently bought here',
+      });
+      for (const g of suggested) out.push({ kind: 'good', key: `s-${g.id}`, good: g });
+      out.push({ kind: 'section', key: 'sec-all', label: 'All goods' });
+    }
+    for (const g of rest) out.push({ kind: 'good', key: `g-${g.id}`, good: g });
+    return out;
+  }, [goods, suggestionCounts, debouncedQuery]);
 
   function add(good: Good) {
     if (addedGoodIds.has(good.id)) return;
@@ -37,80 +72,105 @@ export default function AddItemsScreen() {
     <View style={{ flex: 1, backgroundColor: tokens.bg.page }}>
       <PageHeader title="Add items" />
 
-      <View
-        style={{
-          paddingHorizontal: 16,
-          paddingBottom: 12,
-        }}
-      >
+      <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
         <SearchInput value={query} onChange={setQuery} tokens={tokens} />
       </View>
 
       <FlashList
-        data={goods}
-        keyExtractor={(g) => String(g.id)}
-        renderItem={({ item }) => (
-          <GoodAddRow
-            good={item}
-            category={
-              item.default_category_id != null
-                ? categoryById.get(item.default_category_id)
-                : undefined
-            }
-            added={addedGoodIds.has(item.id)}
-            onAdd={() => add(item)}
-            tokens={tokens}
-          />
-        )}
+        data={rows}
+        keyExtractor={(row) => row.key}
+        getItemType={(row) => row.kind}
+        renderItem={({ item }) => {
+          if (item.kind === 'section') {
+            return <SectionLabel label={item.label} tokens={tokens} />;
+          }
+          return (
+            <GoodAddRow
+              good={item.good}
+              category={
+                item.good.default_category_id != null
+                  ? categoryById.get(item.good.default_category_id)
+                  : undefined
+              }
+              added={addedGoodIds.has(item.good.id)}
+              onAdd={() => add(item.good)}
+              tokens={tokens}
+            />
+          );
+        }}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}
         ListEmptyComponent={
           !isLoading ? (
-            <View
-              style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                paddingVertical: 48,
-                paddingHorizontal: 24,
-              }}
-            >
-              <View
-                style={{
-                  width: 72,
-                  height: 72,
-                  borderRadius: 36,
-                  backgroundColor: tokens.bg.tonal,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: 16,
-                }}
-              >
-                <MaterialIcons name="search-off" color={tokens.text.tertiary} size={32} />
-              </View>
-              <Text
-                style={{
-                  color: tokens.text.primary,
-                  fontSize: 16,
-                  fontWeight: '700',
-                }}
-              >
-                {debouncedQuery ? `No goods match "${debouncedQuery}"` : 'No goods yet'}
-              </Text>
-              <Text
-                style={{
-                  color: tokens.text.tertiary,
-                  marginTop: 6,
-                  fontSize: 13,
-                  textAlign: 'center',
-                }}
-              >
-                {debouncedQuery
-                  ? 'Try a different search or add this good to your catalog.'
-                  : 'Add goods in the Catalog tab to plan trips with them.'}
-              </Text>
-            </View>
+            <EmptyResults debouncedQuery={debouncedQuery} tokens={tokens} />
           ) : null
         }
       />
+    </View>
+  );
+}
+
+function SectionLabel({ label, tokens }: { label: string; tokens: Theme }) {
+  return (
+    <Text
+      style={{
+        color: tokens.text.tertiary,
+        fontSize: 11,
+        fontWeight: '700',
+        letterSpacing: 0.5,
+        textTransform: 'uppercase',
+        marginTop: 16,
+        marginBottom: 4,
+      }}
+    >
+      {label}
+    </Text>
+  );
+}
+
+function EmptyResults({
+  debouncedQuery,
+  tokens,
+}: {
+  debouncedQuery: string;
+  tokens: Theme;
+}) {
+  return (
+    <View
+      style={{
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 48,
+        paddingHorizontal: 24,
+      }}
+    >
+      <View
+        style={{
+          width: 72,
+          height: 72,
+          borderRadius: 36,
+          backgroundColor: tokens.bg.tonal,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: 16,
+        }}
+      >
+        <MaterialIcons name="search-off" color={tokens.text.tertiary} size={32} />
+      </View>
+      <Text style={{ color: tokens.text.primary, fontSize: 16, fontWeight: '700' }}>
+        {debouncedQuery ? `No goods match "${debouncedQuery}"` : 'No goods yet'}
+      </Text>
+      <Text
+        style={{
+          color: tokens.text.tertiary,
+          marginTop: 6,
+          fontSize: 13,
+          textAlign: 'center',
+        }}
+      >
+        {debouncedQuery
+          ? 'Try a different search or add this good to your catalog.'
+          : 'Add goods in the Catalog tab to plan trips with them.'}
+      </Text>
     </View>
   );
 }
