@@ -1,67 +1,130 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
-import { Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { CategoriesList } from '@/ui/components/CategoriesList';
+import { useCategories } from '@/ui/hooks/useCategories';
+import { useGoodsCount } from '@/ui/hooks/useGoods';
 import { Theme } from '@/ui/theme/tokens';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
-const TopTab = createMaterialTopTabNavigator();
+type Segment = 'goods' | 'categories';
 
 export default function CatalogIndex() {
   const { tokens } = useTheme();
+  const [active, setActive] = useState<Segment>('goods');
+  const { data: categories = [] } = useCategories();
+  const { data: goodsCount = 0 } = useGoodsCount();
+
+  const subtitle =
+    active === 'goods'
+      ? `${goodsCount} ${goodsCount === 1 ? 'good' : 'goods'}`
+      : `${categories.length} ${categories.length === 1 ? 'category' : 'categories'}`;
+
   return (
-    <TopTab.Navigator
-      screenOptions={{
-        tabBarStyle: {
-          backgroundColor: tokens.bg.surface,
-          borderBottomWidth: 1,
-          borderBottomColor: tokens.border.subtle,
-          elevation: 0,
-          shadowOpacity: 0,
-        },
-        tabBarIndicatorStyle: {
-          backgroundColor: tokens.accent.base,
-          height: 3,
-          borderRadius: 2,
-        },
-        tabBarLabelStyle: {
-          fontWeight: '600',
-          fontSize: 13,
-          textTransform: 'none',
-          letterSpacing: 0.2,
-        },
-        tabBarActiveTintColor: tokens.text.primary,
-        tabBarInactiveTintColor: tokens.text.tertiary,
-        tabBarPressColor: tokens.bg.elevated,
-        sceneStyle: { backgroundColor: tokens.bg.page },
-      }}
-    >
-      <TopTab.Screen name="Goods" component={GoodsTab} />
-      <TopTab.Screen name="Categories" component={CategoriesTab} />
-    </TopTab.Navigator>
+    <View style={{ flex: 1, backgroundColor: tokens.bg.page }}>
+      <SafeAreaView edges={['top']}>
+        <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12 }}>
+          <Text
+            style={{
+              color: tokens.text.primary,
+              fontSize: 34,
+              fontWeight: '700',
+              letterSpacing: -0.5,
+            }}
+          >
+            Catalog
+          </Text>
+          <Text style={{ color: tokens.text.tertiary, fontSize: 13, marginTop: 2 }}>
+            {subtitle}
+          </Text>
+          <View style={{ marginTop: 16 }}>
+            <SegmentedPill active={active} onChange={setActive} tokens={tokens} />
+          </View>
+        </View>
+      </SafeAreaView>
+      <View style={{ flex: 1 }}>
+        {active === 'goods' ? <GoodsScene tokens={tokens} /> : <CategoriesList />}
+      </View>
+    </View>
   );
 }
 
-function GoodsTab() {
-  const { tokens } = useTheme();
-  return <Placeholder icon="inventory-2" title="Goods list" phase="2A.5" tokens={tokens} />;
-}
-
-function CategoriesTab() {
-  const { tokens } = useTheme();
-  return <Placeholder icon="category" title="Categories list" phase="2A.3" tokens={tokens} />;
-}
-
-function Placeholder({
-  icon,
-  title,
-  phase,
+function SegmentedPill({
+  active,
+  onChange,
   tokens,
 }: {
-  icon: keyof typeof MaterialIcons.glyphMap;
-  title: string;
-  phase: string;
+  active: Segment;
+  onChange: (next: Segment) => void;
   tokens: Theme;
 }) {
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        backgroundColor: tokens.bg.tonal,
+        borderRadius: 12,
+        padding: 4,
+        gap: 4,
+      }}
+    >
+      <Segment
+        label="Goods"
+        active={active === 'goods'}
+        onPress={() => onChange('goods')}
+        tokens={tokens}
+      />
+      <Segment
+        label="Categories"
+        active={active === 'categories'}
+        onPress={() => onChange('categories')}
+        tokens={tokens}
+      />
+    </View>
+  );
+}
+
+function Segment({
+  label,
+  active,
+  onPress,
+  tokens,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+  tokens: Theme;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        flex: 1,
+        paddingVertical: 10,
+        borderRadius: 9,
+        alignItems: 'center',
+        backgroundColor: active
+          ? tokens.accent.base
+          : pressed
+            ? tokens.bg.elevated
+            : 'transparent',
+      })}
+    >
+      <Text
+        style={{
+          color: active ? tokens.text.onAccent : tokens.text.secondary,
+          fontWeight: '600',
+          fontSize: 14,
+        }}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function GoodsScene({ tokens }: { tokens: Theme }) {
   return (
     <View
       style={{
@@ -83,11 +146,13 @@ function Placeholder({
           marginBottom: 16,
         }}
       >
-        <MaterialIcons name={icon} color={tokens.text.tertiary} size={36} />
+        <MaterialIcons name="inventory-2" color={tokens.text.tertiary} size={36} />
       </View>
-      <Text style={{ color: tokens.text.primary, fontSize: 16, fontWeight: '600' }}>{title}</Text>
+      <Text style={{ color: tokens.text.primary, fontSize: 16, fontWeight: '600' }}>
+        Goods list
+      </Text>
       <Text style={{ color: tokens.text.tertiary, marginTop: 6, fontSize: 13 }}>
-        Coming in {phase}
+        Coming in 2A.5
       </Text>
     </View>
   );

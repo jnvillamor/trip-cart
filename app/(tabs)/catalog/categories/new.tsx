@@ -1,10 +1,8 @@
-import { useLocalSearchParams } from 'expo-router';
 import { Text, View } from 'react-native';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
-export default function TripDetailScreen() {
+export default function NewCategoryScreen() {
   const { tokens } = useTheme();
-  const { id } = useLocalSearchParams<{ id: string }>();
   return (
     <View
       style={{
@@ -14,8 +12,8 @@ export default function TripDetailScreen() {
         justifyContent: 'center',
       }}
     >
-      <Text style={{ color: tokens.text.primary }}>Trip detail</Text>
-      <Text style={{ color: tokens.text.secondary, marginTop: 8 }}>id: {id}</Text>
+      <Text style={{ color: tokens.text.primary }}>New category form</Text>
+      <Text style={{ color: tokens.text.tertiary, marginTop: 4 }}>Phase 2A.4</Text>
     </View>
   );
 }

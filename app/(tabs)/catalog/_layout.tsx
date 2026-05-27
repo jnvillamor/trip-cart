@@ -12,9 +12,19 @@ export default function CatalogLayout() {
         contentStyle: { backgroundColor: tokens.bg.page },
       }}
     >
-      <Stack.Screen name="index" options={{ title: 'Catalog' }} />
+      <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="goods/[id]" options={{ title: 'Good' }} />
       <Stack.Screen name="categories/[id]" options={{ title: 'Category' }} />
+      <Stack.Screen
+        name="categories/new"
+        options={{
+          title: 'New category',
+          presentation: 'formSheet',
+          sheetAllowedDetents: 'large',
+          sheetGrabberVisible: true,
+          sheetCornerRadius: 24,
+        }}
+      />
     </Stack>
   );
 }

@@ -3,63 +3,55 @@ import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Platform, Pressable, Switch, Text, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Store } from '@/domain/entities';
-import { useStores } from '@/ui/hooks/useStores';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Category } from '@/domain/entities';
+import { useCategories, useCategoryItemCounts } from '@/ui/hooks/useCategories';
 import { Theme } from '@/ui/theme/tokens';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
 const TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 49 : 56;
 
-export default function StoresListScreen() {
+export function CategoriesList() {
   const { tokens } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [showArchived, setShowArchived] = useState(false);
 
-  const { data: stores = [], isLoading } = useStores({ archived: showArchived });
+  const { data: categories = [], isLoading } = useCategories({ archived: showArchived });
+  const { data: counts } = useCategoryItemCounts();
 
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg.page }}>
-      <SafeAreaView edges={['top']}>
-        <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12 }}>
-          <Text
-            style={{
-              color: tokens.text.primary,
-              fontSize: 34,
-              fontWeight: '700',
-              letterSpacing: -0.5,
-            }}
-          >
-            Stores
-          </Text>
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginTop: 16,
-            }}
-          >
-            <Text style={{ color: tokens.text.secondary, fontSize: 14 }}>Show archived</Text>
-            <Switch
-              value={showArchived}
-              onValueChange={setShowArchived}
-              trackColor={{ false: tokens.border.default, true: tokens.accent.base }}
-              thumbColor={tokens.bg.page}
-            />
-          </View>
-        </View>
-      </SafeAreaView>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingHorizontal: 20,
+          paddingVertical: 12,
+          backgroundColor: tokens.bg.surface,
+          borderBottomWidth: 1,
+          borderBottomColor: tokens.border.subtle,
+        }}
+      >
+        <Text style={{ color: tokens.text.secondary, fontSize: 14 }}>Show archived</Text>
+        <Switch
+          value={showArchived}
+          onValueChange={setShowArchived}
+          trackColor={{ false: tokens.border.default, true: tokens.accent.base }}
+          thumbColor={tokens.bg.page}
+        />
+      </View>
 
       <FlashList
-        data={stores}
+        data={categories}
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => (
-          <StoreCard
-            store={item}
+          <CategoryCard
+            category={item}
+            count={counts?.get(item.id) ?? 0}
             tokens={tokens}
-            onPress={() => router.push(`/stores/${item.id}` as never)}
+            onPress={() => router.push(`/catalog/categories/${item.id}` as never)}
           />
         )}
         ListEmptyComponent={!isLoading ? <EmptyState tokens={tokens} /> : null}
@@ -71,7 +63,7 @@ export default function StoresListScreen() {
       />
 
       <FAB
-        onPress={() => router.push('/stores/new' as never)}
+        onPress={() => router.push('/catalog/categories/new' as never)}
         tokens={tokens}
         bottomOffset={insets.bottom + TAB_BAR_HEIGHT + 16}
       />
@@ -79,16 +71,22 @@ export default function StoresListScreen() {
   );
 }
 
-function StoreCard({
-  store,
+function CategoryCard({
+  category,
+  count,
   tokens,
   onPress,
 }: {
-  store: Store;
+  category: Category;
+  count: number;
   tokens: Theme;
   onPress: () => void;
 }) {
-  const initial = store.name.charAt(0).toUpperCase();
+  const color = category.color_hex ?? tokens.accent.base;
+  const iconName = (category.icon_name ?? 'category').replace(
+    /_/g,
+    '-',
+  ) as keyof typeof MaterialIcons.glyphMap;
   return (
     <Pressable
       onPress={onPress}
@@ -110,14 +108,12 @@ function StoreCard({
           width: 44,
           height: 44,
           borderRadius: 14,
-          backgroundColor: tokens.bg.tonal,
+          backgroundColor: color,
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <Text style={{ color: tokens.accent.base, fontSize: 18, fontWeight: '700' }}>
-          {initial}
-        </Text>
+        <MaterialIcons name={iconName} color="white" size={22} />
       </View>
       <View style={{ flex: 1 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -125,35 +121,16 @@ function StoreCard({
             style={{ color: tokens.text.primary, fontSize: 16, fontWeight: '600' }}
             numberOfLines={1}
           >
-            {store.name}
+            {category.name}
           </Text>
-          {store.is_archived ? (
+          {category.is_archived ? (
             <MaterialIcons name="archive" color={tokens.text.tertiary} size={14} />
           ) : null}
         </View>
-        {store.notes ? (
-          <Text
-            style={{ color: tokens.text.tertiary, fontSize: 13, marginTop: 2 }}
-            numberOfLines={1}
-          >
-            {store.notes}
-          </Text>
-        ) : null}
+        <Text style={{ color: tokens.text.tertiary, fontSize: 13, marginTop: 2 }}>
+          {count} {count === 1 ? 'item' : 'items'}
+        </Text>
       </View>
-      {store.currency_code_override ? (
-        <View
-          style={{
-            backgroundColor: tokens.bg.tonal,
-            paddingHorizontal: 10,
-            paddingVertical: 5,
-            borderRadius: 8,
-          }}
-        >
-          <Text style={{ color: tokens.text.secondary, fontSize: 11, fontWeight: '700' }}>
-            {store.currency_code_override}
-          </Text>
-        </View>
-      ) : null}
     </Pressable>
   );
 }
@@ -179,7 +156,7 @@ function EmptyState({ tokens }: { tokens: Theme }) {
           marginBottom: 20,
         }}
       >
-        <MaterialIcons name="storefront" color={tokens.text.tertiary} size={44} />
+        <MaterialIcons name="category" color={tokens.text.tertiary} size={44} />
       </View>
       <Text
         style={{
@@ -189,7 +166,7 @@ function EmptyState({ tokens }: { tokens: Theme }) {
           letterSpacing: -0.2,
         }}
       >
-        No stores yet
+        No categories yet
       </Text>
       <Text
         style={{
@@ -200,7 +177,7 @@ function EmptyState({ tokens }: { tokens: Theme }) {
           lineHeight: 20,
         }}
       >
-        Add your first store to start planning trips.
+        Add a category to organize your goods.
       </Text>
     </View>
   );
@@ -218,7 +195,7 @@ function FAB({
   return (
     <Pressable
       onPress={onPress}
-      accessibilityLabel="Add store"
+      accessibilityLabel="Add category"
       style={({ pressed }) => ({
         position: 'absolute',
         right: 20,
