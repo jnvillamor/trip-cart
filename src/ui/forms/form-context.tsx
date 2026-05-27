@@ -1,8 +1,10 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { createFormHook, createFormHookContexts } from '@tanstack/react-form';
+import { useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SUPPORTED_CURRENCIES } from '@/domain/currency';
 import { useCategories } from '@/ui/hooks/useCategories';
+import { useStores } from '@/ui/hooks/useStores';
 import { Theme } from '@/ui/theme/tokens';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
@@ -120,6 +122,168 @@ function CategoryPickerField({ label, hint }: { label: string; hint?: string }) 
         ))}
       </ScrollView>
     </FieldShell>
+  );
+}
+
+function StorePickerField({ label, hint }: { label: string; hint?: string }) {
+  const field = useFieldContext<number | null>();
+  const { tokens } = useTheme();
+  const { data: stores = [] } = useStores();
+  const [query, setQuery] = useState('');
+  const first = field.state.meta.errors[0];
+  const error = typeof first === 'string' ? first : first?.message;
+
+  if (stores.length === 0) {
+    return (
+      <FieldShell label={label} hint={hint} error={error} tokens={tokens}>
+        <Text style={{ color: tokens.text.tertiary, fontSize: 13 }}>
+          Add a store first to start planning trips.
+        </Text>
+      </FieldShell>
+    );
+  }
+
+  const showSearch = stores.length > 5;
+  const trimmed = query.trim().toLowerCase();
+  const filtered = trimmed
+    ? stores.filter((s) => s.name.toLowerCase().includes(trimmed))
+    : stores;
+
+  return (
+    <FieldShell label={label} hint={hint} error={error} tokens={tokens}>
+      <View style={{ gap: 8 }}>
+        {showSearch ? (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8,
+              backgroundColor: tokens.bg.tonal,
+              borderRadius: 10,
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+            }}
+          >
+            <MaterialIcons name="search" color={tokens.text.tertiary} size={16} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search stores"
+              placeholderTextColor={tokens.text.tertiary}
+              style={{ flex: 1, color: tokens.text.primary, fontSize: 14, paddingVertical: 0 }}
+            />
+            {query ? (
+              <Pressable onPress={() => setQuery('')} hitSlop={6}>
+                <MaterialIcons name="close" color={tokens.text.tertiary} size={16} />
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
+        <ScrollView
+          style={{
+            maxHeight: 220,
+            borderWidth: 1,
+            borderColor: tokens.border.subtle,
+            borderRadius: 12,
+            backgroundColor: tokens.bg.surface,
+          }}
+          contentContainerStyle={{ padding: 4 }}
+          nestedScrollEnabled
+        >
+          {filtered.length === 0 ? (
+            <Text
+              style={{
+                color: tokens.text.tertiary,
+                fontSize: 13,
+                padding: 12,
+                textAlign: 'center',
+              }}
+            >
+              No stores match "{query}"
+            </Text>
+          ) : (
+            filtered.map((s) => (
+              <StoreOption
+                key={s.id}
+                name={s.name}
+                currencyOverride={s.currency_code_override ?? undefined}
+                active={field.state.value === s.id}
+                onPress={() => field.handleChange(s.id)}
+                tokens={tokens}
+              />
+            ))
+          )}
+        </ScrollView>
+      </View>
+    </FieldShell>
+  );
+}
+
+function StoreOption({
+  name,
+  currencyOverride,
+  active,
+  onPress,
+  tokens,
+}: {
+  name: string;
+  currencyOverride?: string;
+  active: boolean;
+  onPress: () => void;
+  tokens: Theme;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        borderRadius: 10,
+        backgroundColor: active
+          ? tokens.accent.base
+          : pressed
+            ? tokens.bg.elevated
+            : 'transparent',
+      })}
+    >
+      <Text
+        style={{
+          flex: 1,
+          color: active ? tokens.text.onAccent : tokens.text.primary,
+          fontSize: 15,
+          fontWeight: active ? '600' : '500',
+        }}
+        numberOfLines={1}
+      >
+        {name}
+      </Text>
+      {currencyOverride ? (
+        <View
+          style={{
+            backgroundColor: active ? 'rgba(255,255,255,0.18)' : tokens.bg.tonal,
+            paddingHorizontal: 6,
+            paddingVertical: 2,
+            borderRadius: 4,
+          }}
+        >
+          <Text
+            style={{
+              color: active ? tokens.text.onAccent : tokens.text.secondary,
+              fontSize: 10,
+              fontWeight: '700',
+            }}
+          >
+            {currencyOverride}
+          </Text>
+        </View>
+      ) : null}
+      {active ? (
+        <MaterialIcons name="check" color={tokens.text.onAccent} size={16} />
+      ) : null}
+    </Pressable>
   );
 }
 
@@ -385,6 +549,13 @@ function textInputStyle(tokens: Theme) {
 export const { useAppForm, withForm } = createFormHook({
   fieldContext,
   formContext,
-  fieldComponents: { TextField, CurrencyField, IconField, ColorField, CategoryPickerField },
+  fieldComponents: {
+    TextField,
+    CurrencyField,
+    IconField,
+    ColorField,
+    CategoryPickerField,
+    StorePickerField,
+  },
   formComponents: { SubmitButton },
 });

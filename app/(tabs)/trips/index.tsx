@@ -175,19 +175,29 @@ function TripRow({
 }
 
 function StatusBadge({ status, tokens }: { status: TripStatus; tokens: Theme }) {
-  const { bg, fg, label } = statusVisuals(status, tokens);
+  const { color, label } = statusVisuals(status, tokens);
   return (
     <View
       style={{
-        backgroundColor: bg,
+        backgroundColor: tokens.bg.tonal,
         paddingHorizontal: 10,
         paddingVertical: 6,
-        borderRadius: 10,
-        minWidth: 88,
+        borderRadius: 999,
+        flexDirection: 'row',
         alignItems: 'center',
+        gap: 6,
+        alignSelf: 'flex-start',
       }}
     >
-      <Text style={{ color: fg, fontSize: 11, fontWeight: '700', letterSpacing: 0.3 }}>
+      <View
+        style={{
+          width: 6,
+          height: 6,
+          borderRadius: 3,
+          backgroundColor: color,
+        }}
+      />
+      <Text style={{ color, fontSize: 11, fontWeight: '700', letterSpacing: 0.3 }}>
         {label.toUpperCase()}
       </Text>
     </View>
@@ -197,13 +207,13 @@ function StatusBadge({ status, tokens }: { status: TripStatus; tokens: Theme }) 
 function statusVisuals(status: TripStatus, tokens: Theme) {
   switch (status) {
     case TRIP_STATUS_ENUM.PLANNED:
-      return { bg: tokens.info[20], fg: tokens.info[0], label: 'Planned' };
+      return { color: tokens.info[0], label: 'Planned' };
     case TRIP_STATUS_ENUM.IN_PROGRESS:
-      return { bg: tokens.accent.base, fg: tokens.text.onAccent, label: 'Shopping' };
+      return { color: tokens.accent.base, label: 'Shopping' };
     case TRIP_STATUS_ENUM.COMPLETED:
-      return { bg: tokens.success[20], fg: tokens.success[0], label: 'Done' };
+      return { color: tokens.success[0], label: 'Done' };
     case TRIP_STATUS_ENUM.CANCELED:
-      return { bg: tokens.bg.tonal, fg: tokens.text.tertiary, label: 'Canceled' };
+      return { color: tokens.text.tertiary, label: 'Canceled' };
   }
 }
 
