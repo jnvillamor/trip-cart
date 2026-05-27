@@ -13,6 +13,7 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.100.14",
     "drizzle-orm": "^0.45.2",
     "expo": "~54.0.33",
     "expo-router": "~6.0.23",
