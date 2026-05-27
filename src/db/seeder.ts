@@ -1,11 +1,11 @@
-import { THEME_MODE_ENUM } from '@/domain/constants'
-import { Database } from './client'
-import * as schema from '@/db/models'
+import { THEME_MODE_ENUM } from '@/domain/constants';
+import { Database } from './client';
+import * as schema from '@/db/models';
 
 const DEFAULT_CATEGORIES: ReadonlyArray<{
-  name: string
-  icon_name: string
-  color_hex: string
+  name: string;
+  icon_name: string;
+  color_hex: string;
 }> = [
   { name: 'Produce', icon_name: 'eco', color_hex: '#4CAF50' },
   { name: 'Dairy', icon_name: 'icecream', color_hex: '#03A9F4' },
@@ -18,7 +18,7 @@ const DEFAULT_CATEGORIES: ReadonlyArray<{
   { name: 'Household', icon_name: 'home', color_hex: '#607D8B' },
   { name: 'Personal Care', icon_name: 'soap', color_hex: '#FF5722' },
   { name: 'Other', icon_name: 'category', color_hex: '#9E9E9E' },
-]
+];
 
 export async function seedIfNeeded(db: Database): Promise<void> {
   await db.transaction(async (tx) => {
@@ -32,10 +32,10 @@ export async function seedIfNeeded(db: Database): Promise<void> {
         schema_version: 1,
         seed_color_hex: '#2E5C8A',
       })
-      .onConflictDoNothing()
+      .onConflictDoNothing();
 
     for (const category of DEFAULT_CATEGORIES) {
-      await tx.insert(schema.categories).values(category).onConflictDoNothing()
+      await tx.insert(schema.categories).values(category).onConflictDoNothing();
     }
-  })
+  });
 }

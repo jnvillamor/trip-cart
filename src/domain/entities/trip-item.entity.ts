@@ -1,10 +1,10 @@
-import { TripItemRow } from '@/db/models'
+import { TripItemRow } from '@/db/models';
 
 export interface TripItem extends TripItemRow {
-  readonly planned_totoal_minor: number | null
-  readonly actual_total_minor: number | null
-  readonly effective_total_minor: number | null
-  readonly is_missing_actual: boolean
+  readonly planned_totoal_minor: number | null;
+  readonly actual_total_minor: number | null;
+  readonly effective_total_minor: number | null;
+  readonly is_missing_actual: boolean;
 }
 
 export function toTripItem(row: TripItemRow): TripItem {
@@ -14,15 +14,15 @@ export function toTripItem(row: TripItemRow): TripItem {
   const plannedTotalMinor =
     row.planned_quantity != null && row.planned_unit_price != null
       ? Math.round(row.planned_quantity * row.planned_unit_price)
-      : null
+      : null;
 
   const actualTotalMinor =
     row.actual_quantity != null && row.actual_unit_price != null
       ? Math.round(row.actual_quantity * row.actual_unit_price)
-      : null
+      : null;
 
-  const effectiveTotalMinor = actualTotalMinor ?? plannedTotalMinor
-  const isMissingActuals = row.is_checked && actualTotalMinor === null
+  const effectiveTotalMinor = actualTotalMinor ?? plannedTotalMinor;
+  const isMissingActuals = row.is_checked && actualTotalMinor === null;
 
   return {
     ...row,
@@ -30,5 +30,5 @@ export function toTripItem(row: TripItemRow): TripItem {
     actual_total_minor: actualTotalMinor,
     effective_total_minor: effectiveTotalMinor,
     is_missing_actual: isMissingActuals,
-  }
+  };
 }

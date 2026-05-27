@@ -1,13 +1,7 @@
-import {
-  index,
-  integer,
-  real,
-  sqliteTable,
-  text,
-} from 'drizzle-orm/sqlite-core'
-import { trips } from './trip.model'
-import { goods } from './good.model'
-import { sql } from 'drizzle-orm'
+import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { trips } from './trip.model';
+import { goods } from './good.model';
+import { sql } from 'drizzle-orm';
 
 export const tripItems = sqliteTable(
   'trip_items',
@@ -29,9 +23,7 @@ export const tripItems = sqliteTable(
     planned_unit_price: real('planned_unit_price').default(0),
     actual_unit_price: real('actual_unit_price').default(0),
 
-    is_checked: integer('is_checked', { mode: 'boolean' })
-      .notNull()
-      .default(false),
+    is_checked: integer('is_checked', { mode: 'boolean' }).notNull().default(false),
     sort_order: integer('sort_order').notNull().default(0),
     notes: text('notes'),
 
@@ -47,7 +39,7 @@ export const tripItems = sqliteTable(
     index('trip_items_trip_sort_idx').on(table.trip_id, table.sort_order),
     index('trip_items_good_idx').on(table.good_id),
   ],
-)
+);
 
-export type TripItemRow = typeof tripItems.$inferSelect
-export type TripItemInsert = typeof tripItems.$inferInsert
+export type TripItemRow = typeof tripItems.$inferSelect;
+export type TripItemInsert = typeof tripItems.$inferInsert;

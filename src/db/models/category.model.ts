@@ -1,10 +1,5 @@
-import { sql } from 'drizzle-orm'
-import {
-  integer,
-  sqliteTable,
-  text,
-  uniqueIndex,
-} from 'drizzle-orm/sqlite-core'
+import { sql } from 'drizzle-orm';
+import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 export const categories = sqliteTable(
   'categories',
@@ -23,7 +18,7 @@ export const categories = sqliteTable(
     archived_at: integer('archived_at', { mode: 'timestamp_ms' }),
   },
   (table) => [uniqueIndex('categories_name_idx').on(table.name)],
-)
+);
 
-export type CategoryRow = typeof categories.$inferSelect
-export type CategoryInsert = typeof categories.$inferInsert
+export type CategoryRow = typeof categories.$inferSelect;
+export type CategoryInsert = typeof categories.$inferInsert;

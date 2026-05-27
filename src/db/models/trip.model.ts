@@ -1,8 +1,8 @@
-import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
-import { stores } from './store.model'
-import { sql } from 'drizzle-orm'
-import { TripStatus } from '@/domain/schemas/trip.schema'
-import { TRIP_STATUS_ENUM } from '@/domain/constants'
+import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { stores } from './store.model';
+import { sql } from 'drizzle-orm';
+import { TripStatus } from '@/domain/schemas/trip.schema';
+import { TRIP_STATUS_ENUM } from '@/domain/constants';
 
 export const trips = sqliteTable(
   'trips',
@@ -14,10 +14,7 @@ export const trips = sqliteTable(
       .references(() => stores.id, { onDelete: 'restrict' }),
 
     resolved_currency_code: text('resolved_currency_code').notNull(),
-    status: text('status')
-      .$type<TripStatus>()
-      .notNull()
-      .default(TRIP_STATUS_ENUM.PLANNED),
+    status: text('status').$type<TripStatus>().notNull().default(TRIP_STATUS_ENUM.PLANNED),
     notes: text('notes'),
 
     planned_for: integer('planned_for', { mode: 'timestamp_ms' }),
@@ -37,7 +34,7 @@ export const trips = sqliteTable(
     index('trips_status_idx').on(table.status),
     index('trips_completed_at_idx').on(table.completed_at),
   ],
-)
+);
 
-export type TripRow = typeof trips.$inferSelect
-export type TripInsert = typeof trips.$inferInsert
+export type TripRow = typeof trips.$inferSelect;
+export type TripInsert = typeof trips.$inferInsert;

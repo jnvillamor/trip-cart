@@ -1,3 +1,3 @@
-import { SettingsRow } from "@/db/models";
+import { SettingsRow } from '@/db/models';
 
-export type Settings = SettingsRow
+export type Settings = SettingsRow;
