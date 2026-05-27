@@ -2,9 +2,10 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Switch, Text, View } from 'react-native';
+import { View } from 'react-native';
 import { Category } from '@/domain/entities';
 import { useCategories, useCategoryItemCounts } from '@/ui/hooks/useCategories';
+import { ArchivedToggle } from '@/ui/components/ArchivedToggle';
 import { FAB, useFabBottomReserve } from '@/ui/components/FAB';
 import { ListCard } from '@/ui/components/ListCard';
 import { ListEmptyState } from '@/ui/components/ListEmptyState';
@@ -24,9 +25,6 @@ export function CategoriesList() {
     <View style={{ flex: 1, backgroundColor: tokens.bg.page }}>
       <View
         style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
           paddingHorizontal: 20,
           paddingVertical: 12,
           backgroundColor: tokens.bg.surface,
@@ -34,13 +32,7 @@ export function CategoriesList() {
           borderBottomColor: tokens.border.subtle,
         }}
       >
-        <Text style={{ color: tokens.text.secondary, fontSize: 14 }}>Show archived</Text>
-        <Switch
-          value={showArchived}
-          onValueChange={setShowArchived}
-          trackColor={{ false: tokens.border.default, true: tokens.accent.base }}
-          thumbColor={tokens.bg.page}
-        />
+        <ArchivedToggle value={showArchived} onChange={setShowArchived} />
       </View>
 
       <FlashList

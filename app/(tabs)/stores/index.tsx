@@ -1,9 +1,10 @@
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Switch, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Store } from '@/domain/entities';
+import { ArchivedToggle } from '@/ui/components/ArchivedToggle';
 import { FAB, useFabBottomReserve } from '@/ui/components/FAB';
 import { ListCard } from '@/ui/components/ListCard';
 import { ListEmptyState } from '@/ui/components/ListEmptyState';
@@ -33,21 +34,8 @@ export default function StoresListScreen() {
           >
             Stores
           </Text>
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginTop: 16,
-            }}
-          >
-            <Text style={{ color: tokens.text.secondary, fontSize: 14 }}>Show archived</Text>
-            <Switch
-              value={showArchived}
-              onValueChange={setShowArchived}
-              trackColor={{ false: tokens.border.default, true: tokens.accent.base }}
-              thumbColor={tokens.bg.page}
-            />
+          <View style={{ marginTop: 16 }}>
+            <ArchivedToggle value={showArchived} onChange={setShowArchived} />
           </View>
         </View>
       </SafeAreaView>
