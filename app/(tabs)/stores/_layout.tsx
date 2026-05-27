@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
-export default function CatalogLayout() {
+export default function StoresLayout() {
   const { tokens } = useTheme();
   return (
     <Stack
@@ -12,9 +12,9 @@ export default function CatalogLayout() {
         contentStyle: { backgroundColor: tokens.bg.page },
       }}
     >
-      <Stack.Screen name="index" options={{ title: 'Catalog' }} />
-      <Stack.Screen name="goods/[id]" options={{ title: 'Good' }} />
-      <Stack.Screen name="categories/[id]" options={{ title: 'Category' }} />
+      <Stack.Screen name="index" options={{ title: 'Stores' }} />
+      <Stack.Screen name="new" options={{ title: 'New store' }} />
+      <Stack.Screen name="[id]" options={{ title: 'Store' }} />
     </Stack>
   );
 }

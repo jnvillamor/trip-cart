@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
-export default function StoresListScreen() {
+export default function NewStoreScreen() {
   const { tokens } = useTheme();
   return (
     <View
@@ -12,7 +12,8 @@ export default function StoresListScreen() {
         justifyContent: 'center',
       }}
     >
-      <Text style={{ color: tokens.text.primary }}>Stores list</Text>
+      <Text style={{ color: tokens.text.primary }}>New store form</Text>
+      <Text style={{ color: tokens.text.tertiary, marginTop: 4 }}>Phase 2A.2</Text>
     </View>
   );
 }

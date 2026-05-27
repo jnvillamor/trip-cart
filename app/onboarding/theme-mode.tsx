@@ -25,7 +25,7 @@ export default function ThemeModeOnboarding() {
             disabled={setOnboarded.isPending}
             onPress={async () => {
               await setOnboarded.mutateAsync(true);
-              router.replace('/');
+              router.replace('/trips');
             }}
             style={({ pressed }) => ({
               backgroundColor: pressed ? tokens.accent.active : tokens.accent.base,

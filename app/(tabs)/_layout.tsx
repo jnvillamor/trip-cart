@@ -11,13 +11,13 @@ export default function TabsLayout() {
       iconColor={{ default: tokens.text.tertiary, selected: tokens.accent.base }}
       labelStyle={{ color: tokens.text.tertiary }}
     >
-      <NativeTabs.Trigger name="index">
-        <Icon sf="house.fill" androidSrc={<MaterialIcons name="home" />} />
-        <Label>Home</Label>
-      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="trips">
         <Icon sf="cart.fill" androidSrc={<MaterialIcons name="shopping-cart" />} />
         <Label>Trips</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="stores">
+        <Icon sf="storefront.fill" androidSrc={<MaterialIcons name="storefront" />} />
+        <Label>Stores</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="catalog">
         <Icon sf="shippingbox.fill" androidSrc={<MaterialIcons name="inventory-2" />} />

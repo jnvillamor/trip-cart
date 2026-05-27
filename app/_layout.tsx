@@ -25,7 +25,7 @@ function RootGate() {
     if (!onboarded && !inOnboarding) {
       router.replace('/onboarding/currency');
     } else if (onboarded && inOnboarding) {
-      router.replace('/');
+      router.replace('/trips');
     }
   }, [onboarded, isLoading, segments, router]);
 
