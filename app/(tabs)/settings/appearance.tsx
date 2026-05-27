@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
-export default function SettingsScreen() {
+export default function AppearanceScreen() {
   const { tokens } = useTheme();
   return (
     <View
@@ -12,7 +12,7 @@ export default function SettingsScreen() {
         justifyContent: 'center',
       }}
     >
-      <Text style={{ color: tokens.text.primary }}>Settings</Text>
+      <Text style={{ color: tokens.text.primary }}>Appearance</Text>
     </View>
   );
 }
