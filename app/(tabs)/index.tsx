@@ -1,28 +1,29 @@
 import { ReactNode } from 'react';
 import { ScrollView, Text, View } from 'react-native';
+import { ActiveTripBanner } from '@/ui/components/ActiveTripBanner';
 import { Theme } from '@/ui/theme/tokens';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
 export default function HomeScreen() {
   const { tokens } = useTheme();
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: tokens.bg.page }}
-      contentContainerStyle={{ padding: 16, gap: 16 }}
-    >
-      <Section title="Active trip" tokens={tokens}>
-        <Text style={{ color: tokens.text.secondary }}>No active trip.</Text>
-      </Section>
-      <Section title="Recent trips" tokens={tokens}>
-        <Text style={{ color: tokens.text.secondary }}>Coming soon.</Text>
-      </Section>
-      <Section title="This month" tokens={tokens}>
-        <Text style={{ color: tokens.text.secondary }}>Coming soon.</Text>
-      </Section>
-      <Section title="Insights" tokens={tokens}>
-        <Text style={{ color: tokens.text.secondary }}>Coming soon.</Text>
-      </Section>
-    </ScrollView>
+    <View style={{ flex: 1, backgroundColor: tokens.bg.page }}>
+      <ActiveTripBanner />
+      <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
+        <Section title="Active trip" tokens={tokens}>
+          <Text style={{ color: tokens.text.secondary }}>No active trip.</Text>
+        </Section>
+        <Section title="Recent trips" tokens={tokens}>
+          <Text style={{ color: tokens.text.secondary }}>Coming soon.</Text>
+        </Section>
+        <Section title="This month" tokens={tokens}>
+          <Text style={{ color: tokens.text.secondary }}>Coming soon.</Text>
+        </Section>
+        <Section title="Insights" tokens={tokens}>
+          <Text style={{ color: tokens.text.secondary }}>Coming soon.</Text>
+        </Section>
+      </ScrollView>
+    </View>
   );
 }
 
