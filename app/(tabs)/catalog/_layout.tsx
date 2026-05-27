@@ -12,6 +12,15 @@ export default function CatalogLayout() {
     >
       <Stack.Screen name="index" />
       <Stack.Screen name="goods/[id]" />
+      <Stack.Screen
+        name="goods/new"
+        options={{
+          presentation: 'formSheet',
+          sheetAllowedDetents: 'large',
+          sheetGrabberVisible: true,
+          sheetCornerRadius: 24,
+        }}
+      />
       <Stack.Screen name="categories/[id]" />
       <Stack.Screen
         name="categories/new"

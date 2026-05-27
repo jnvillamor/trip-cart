@@ -1,8 +1,8 @@
-import { MaterialIcons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CategoriesList } from '@/ui/components/CategoriesList';
+import { GoodsList } from '@/ui/components/GoodsList';
 import { useCategories } from '@/ui/hooks/useCategories';
 import { useGoodsCount } from '@/ui/hooks/useGoods';
 import { Theme } from '@/ui/theme/tokens';
@@ -44,7 +44,7 @@ export default function CatalogIndex() {
         </View>
       </SafeAreaView>
       <View style={{ flex: 1 }}>
-        {active === 'goods' ? <GoodsScene tokens={tokens} /> : <CategoriesList />}
+        {active === 'goods' ? <GoodsList /> : <CategoriesList />}
       </View>
     </View>
   );
@@ -121,39 +121,5 @@ function Segment({
         {label}
       </Text>
     </Pressable>
-  );
-}
-
-function GoodsScene({ tokens }: { tokens: Theme }) {
-  return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: tokens.bg.page,
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 24,
-      }}
-    >
-      <View
-        style={{
-          width: 72,
-          height: 72,
-          borderRadius: 36,
-          backgroundColor: tokens.bg.tonal,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 16,
-        }}
-      >
-        <MaterialIcons name="inventory-2" color={tokens.text.tertiary} size={36} />
-      </View>
-      <Text style={{ color: tokens.text.primary, fontSize: 16, fontWeight: '600' }}>
-        Goods list
-      </Text>
-      <Text style={{ color: tokens.text.tertiary, marginTop: 6, fontSize: 13 }}>
-        Coming in 2A.5
-      </Text>
-    </View>
   );
 }
