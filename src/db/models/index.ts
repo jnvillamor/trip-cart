@@ -1,0 +1,6 @@
+export * from './category.model'
+export * from './good.model'
+export * from './store.model'
+export * from './trip.model'
+export * from './trip-item.model'
+export * from './settings.model'
