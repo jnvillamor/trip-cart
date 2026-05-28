@@ -2,8 +2,9 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import { Good } from '@/domain/entities';
+import { CategoryPickerSheet } from '@/ui/components/CategoryPickerSheet';
 import { FAB, useFabBottomReserve } from '@/ui/components/FAB';
 import { ListCard } from '@/ui/components/ListCard';
 import { ListEmptyState } from '@/ui/components/ListEmptyState';
@@ -20,6 +21,7 @@ export function GoodsList() {
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebouncedValue(query, 150);
   const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const { data: categories = [] } = useCategories();
   const { data: goods = [], isLoading } = useGoods({
@@ -40,10 +42,20 @@ export function GoodsList() {
         }}
       >
         <SearchInput value={query} onChange={setQuery} tokens={tokens} />
-        <CategoryChipRow
-          categories={categories}
+        <CategoryFilterButton
           activeId={categoryId}
-          onChange={setCategoryId}
+          activeName={
+            categoryId != null
+              ? categoryById.get(categoryId)?.name ?? 'Unknown'
+              : null
+          }
+          activeColor={
+            categoryId != null
+              ? categoryById.get(categoryId)?.color_hex ?? null
+              : null
+          }
+          onPress={() => setPickerOpen(true)}
+          onClear={() => setCategoryId(null)}
           tokens={tokens}
         />
       </View>
@@ -87,7 +99,93 @@ export function GoodsList() {
         onPress={() => router.push('/catalog/goods/new' as never)}
         accessibilityLabel="Add good"
       />
+
+      <CategoryPickerSheet
+        visible={pickerOpen}
+        value={categoryId}
+        includeNone
+        noneLabel="All categories"
+        onPick={(id) => setCategoryId(id)}
+        onClose={() => setPickerOpen(false)}
+      />
     </View>
+  );
+}
+
+function CategoryFilterButton({
+  activeId,
+  activeName,
+  activeColor,
+  onPress,
+  onClear,
+  tokens,
+}: {
+  activeId: number | null;
+  activeName: string | null;
+  activeColor: string | null;
+  onPress: () => void;
+  onClear: () => void;
+  tokens: Theme;
+}) {
+  const hasFilter = activeId !== null;
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        backgroundColor: pressed ? tokens.bg.elevated : tokens.bg.surface,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: hasFilter ? tokens.accent.base : tokens.border.subtle,
+        paddingVertical: 8,
+        paddingLeft: 14,
+        paddingRight: hasFilter ? 6 : 14,
+        alignSelf: 'flex-start',
+      })}
+    >
+      <MaterialIcons
+        name="filter-list"
+        color={hasFilter ? tokens.accent.base : tokens.text.tertiary}
+        size={18}
+      />
+      {activeColor ? (
+        <View
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: 4,
+            backgroundColor: activeColor,
+          }}
+        />
+      ) : null}
+      <Text
+        style={{
+          color: hasFilter ? tokens.text.primary : tokens.text.secondary,
+          fontSize: 13,
+          fontWeight: '600',
+        }}
+      >
+        {activeName ?? 'All categories'}
+      </Text>
+      {hasFilter ? (
+        <Pressable
+          onPress={onClear}
+          hitSlop={6}
+          style={({ pressed }) => ({
+            width: 22,
+            height: 22,
+            borderRadius: 11,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: pressed ? tokens.bg.elevated : tokens.bg.tonal,
+          })}
+        >
+          <MaterialIcons name="close" color={tokens.text.tertiary} size={14} />
+        </Pressable>
+      ) : null}
+    </Pressable>
   );
 }
 
@@ -131,93 +229,6 @@ function SearchInput({
         </Pressable>
       ) : null}
     </View>
-  );
-}
-
-function CategoryChipRow({
-  categories,
-  activeId,
-  onChange,
-  tokens,
-}: {
-  categories: { id: number; name: string; color_hex: string | null }[];
-  activeId: number | null;
-  onChange: (id: number | null) => void;
-  tokens: Theme;
-}) {
-  return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ gap: 8, paddingVertical: 2 }}
-    >
-      <Chip label="All" active={activeId === null} onPress={() => onChange(null)} tokens={tokens} />
-      {categories.map((c) => (
-        <Chip
-          key={c.id}
-          label={c.name}
-          color={c.color_hex ?? undefined}
-          active={activeId === c.id}
-          onPress={() => onChange(c.id)}
-          tokens={tokens}
-        />
-      ))}
-    </ScrollView>
-  );
-}
-
-function Chip({
-  label,
-  active,
-  color,
-  onPress,
-  tokens,
-}: {
-  label: string;
-  active: boolean;
-  color?: string;
-  onPress: () => void;
-  tokens: Theme;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 999,
-        backgroundColor: active
-          ? tokens.accent.base
-          : pressed
-            ? tokens.bg.elevated
-            : tokens.bg.page,
-        borderWidth: 1,
-        borderColor: active ? tokens.accent.base : tokens.border.subtle,
-      })}
-    >
-      {color ? (
-        <View
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: 4,
-            backgroundColor: color,
-          }}
-        />
-      ) : null}
-      <Text
-        style={{
-          color: active ? tokens.text.onAccent : tokens.text.secondary,
-          fontWeight: '600',
-          fontSize: 13,
-        }}
-      >
-        {label}
-      </Text>
-    </Pressable>
   );
 }
 

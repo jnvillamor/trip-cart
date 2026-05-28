@@ -3,6 +3,7 @@ import { createFormHook, createFormHookContexts } from '@tanstack/react-form';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { findCurrency } from '@/domain/currency';
+import { CategoryPickerSheet } from '@/ui/components/CategoryPickerSheet';
 import { CurrencyPickerSheet } from '@/ui/components/CurrencyPickerSheet';
 import { useCategories } from '@/ui/hooks/useCategories';
 import { useStores } from '@/ui/hooks/useStores';
@@ -95,33 +96,71 @@ function TextField({
 function CategoryPickerField({ label, hint }: { label: string; hint?: string }) {
   const field = useFieldContext<number | null>();
   const { tokens } = useTheme();
+  const [open, setOpen] = useState(false);
   const { data: categories = [] } = useCategories();
   const first = field.state.meta.errors[0];
   const error = typeof first === 'string' ? first : first?.message;
+  const selected =
+    field.state.value != null ? categories.find((c) => c.id === field.state.value) : undefined;
+  const tile = selected?.color_hex ?? tokens.bg.tonal;
+  const iconName = ((selected?.icon_name ?? 'category').replace(
+    /_/g,
+    '-',
+  )) as keyof typeof MaterialIcons.glyphMap;
   return (
     <FieldShell label={label} hint={hint} error={error} tokens={tokens}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: 8, paddingVertical: 2 }}
+      <Pressable
+        onPress={() => setOpen(true)}
+        style={({ pressed }) => ({
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 12,
+          backgroundColor: pressed ? tokens.bg.elevated : tokens.bg.surface,
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: tokens.border.subtle,
+          paddingVertical: 12,
+          paddingHorizontal: 14,
+        })}
       >
-        <CategoryChip
-          label="None"
-          active={field.state.value === null}
-          onPress={() => field.handleChange(null)}
-          tokens={tokens}
-        />
-        {categories.map((c) => (
-          <CategoryChip
-            key={c.id}
-            label={c.name}
-            color={c.color_hex ?? undefined}
-            active={field.state.value === c.id}
-            onPress={() => field.handleChange(c.id)}
-            tokens={tokens}
+        <View
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            backgroundColor: tile,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <MaterialIcons
+            name={iconName}
+            color={selected ? 'white' : tokens.text.tertiary}
+            size={18}
           />
-        ))}
-      </ScrollView>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text
+            style={{ color: tokens.text.primary, fontSize: 15, fontWeight: '600' }}
+            numberOfLines={1}
+          >
+            {selected ? selected.name : 'No category'}
+          </Text>
+          <Text
+            style={{ color: tokens.text.tertiary, fontSize: 12, marginTop: 2 }}
+            numberOfLines={1}
+          >
+            {selected ? 'Tap to change' : 'Tap to pick one'}
+          </Text>
+        </View>
+        <MaterialIcons name="unfold-more" color={tokens.text.tertiary} size={20} />
+      </Pressable>
+      <CategoryPickerSheet
+        visible={open}
+        value={field.state.value}
+        onPick={(id) => field.handleChange(id)}
+        onClose={() => setOpen(false)}
+      />
     </FieldShell>
   );
 }
@@ -284,61 +323,6 @@ function StoreOption({
       {active ? (
         <MaterialIcons name="check" color={tokens.text.onAccent} size={16} />
       ) : null}
-    </Pressable>
-  );
-}
-
-function CategoryChip({
-  label,
-  active,
-  color,
-  onPress,
-  tokens,
-}: {
-  label: string;
-  active: boolean;
-  color?: string;
-  onPress: () => void;
-  tokens: Theme;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 999,
-        backgroundColor: active
-          ? tokens.accent.base
-          : pressed
-            ? tokens.bg.elevated
-            : tokens.bg.surface,
-        borderWidth: 1,
-        borderColor: active ? tokens.accent.base : tokens.border.subtle,
-      })}
-    >
-      {color ? (
-        <View
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: 4,
-            backgroundColor: color,
-          }}
-        />
-      ) : null}
-      <Text
-        style={{
-          color: active ? tokens.text.onAccent : tokens.text.secondary,
-          fontWeight: '600',
-          fontSize: 13,
-        }}
-      >
-        {label}
-      </Text>
     </Pressable>
   );
 }
