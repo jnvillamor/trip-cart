@@ -20,6 +20,8 @@ export type CreateTripInput = z.infer<typeof CreateTripInputSchema>;
 
 export const UpdateTripInputSchema = z.object({
   name: requireName('Trip name').optional(),
+  store_id: z.number().int().positive('Store is required').optional(),
+  resolved_currency_code: currencyCodeSchema.optional(),
   status: TripStatusSchema.optional(),
   planned_for: z.date().optional(),
   started_at: z.date().optional(),

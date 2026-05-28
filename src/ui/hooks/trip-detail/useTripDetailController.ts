@@ -170,6 +170,7 @@ export function useTripDetailController(tripId: number) {
   }
 
   const goAddItems = () => router.push(`/trips/${tripId}/add-items` as never);
+  const goEdit = () => router.push(`/trips/${tripId}/edit` as never);
 
   const confirmStart = () =>
     setConfirm({
@@ -242,6 +243,14 @@ export function useTripDetailController(tripId: number) {
   const moreActions: MoreAction[] = (() => {
     const list: MoreAction[] = [];
     if (editable) list.push({ key: 'add', label: 'Add items', icon: 'add', onPress: goAddItems });
+    if (editable) {
+      list.push({
+        key: 'edit',
+        label: 'Edit trip',
+        icon: 'edit',
+        onPress: goEdit,
+      });
+    }
     if (editable && hasItems) {
       list.push({
         key: 'sort-category',

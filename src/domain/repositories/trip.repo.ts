@@ -51,6 +51,10 @@ export const createTripRepo = (db: Database) => ({
   async update(id: number, input: UpdateTripInput): Promise<Trip | null> {
     const patch: Partial<TripInsert> = { updated_at: new Date() };
     if (input.name !== undefined) patch.name = input.name;
+    if (input.store_id !== undefined) patch.store_id = input.store_id;
+    if (input.resolved_currency_code !== undefined) {
+      patch.resolved_currency_code = input.resolved_currency_code;
+    }
     if (input.status !== undefined) patch.status = input.status;
     if (input.planned_for !== undefined) patch.planned_for = input.planned_for ?? null;
     if (input.started_at !== undefined) patch.started_at = input.started_at ?? null;
