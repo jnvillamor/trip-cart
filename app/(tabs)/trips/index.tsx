@@ -4,8 +4,10 @@ import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Trip } from '@/domain/entities';
 import { ActiveTripBanner } from '@/ui/components/ActiveTripBanner';
+import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { FAB, useFabBottomReserve } from '@/ui/components/FAB';
 import { ListEmptyState } from '@/ui/components/ListEmptyState';
+import { SelectionActionBar } from '@/ui/components/trips-list/SelectionActionBar';
 import { StatusFilterChips } from '@/ui/components/trips-list/StatusFilterChips';
 import { TripRow } from '@/ui/components/trips-list/TripRow';
 import { useTripsListController } from '@/ui/hooks/trips-list/useTripsListController';
@@ -35,21 +37,35 @@ export default function TripsListScreen() {
     <View style={{ flex: 1, backgroundColor: tokens.bg.page }}>
       <SafeAreaView edges={['top']}>
         <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12 }}>
-          <Text
-            style={{
-              color: tokens.text.primary,
-              fontSize: 34,
-              fontWeight: '700',
-              letterSpacing: -0.5,
-            }}
-          >
-            Trips
-          </Text>
-          <StatusFilterChips value={ctrl.statusFilter} onChange={ctrl.setStatusFilter} />
+          {ctrl.selectionMode ? (
+            <SelectionActionBar
+              count={ctrl.selectedCount}
+              busy={ctrl.deleting}
+              onCancel={ctrl.clearSelection}
+              onDelete={ctrl.confirmDeleteSelected}
+            />
+          ) : (
+            <>
+              <Text
+                style={{
+                  color: tokens.text.primary,
+                  fontSize: 34,
+                  fontWeight: '700',
+                  letterSpacing: -0.5,
+                }}
+              >
+                Trips
+              </Text>
+              <StatusFilterChips
+                value={ctrl.statusFilter}
+                onChange={ctrl.setStatusFilter}
+              />
+            </>
+          )}
         </View>
       </SafeAreaView>
 
-      <ActiveTripBanner />
+      {ctrl.selectionMode ? null : <ActiveTripBanner />}
 
       <FlashList
         ref={listRef}
@@ -59,7 +75,10 @@ export default function TripsListScreen() {
           <TripRow
             trip={item}
             storeName={ctrl.storeNameFor(item.store_id)}
-            onPress={() => ctrl.openTrip(item.id)}
+            selectionMode={ctrl.selectionMode}
+            selected={ctrl.selectedIds.has(item.id)}
+            onPress={() => ctrl.onTripPress(item.id)}
+            onLongPress={() => ctrl.onTripLongPress(item.id)}
           />
         )}
         ListEmptyComponent={
@@ -82,7 +101,11 @@ export default function TripsListScreen() {
         }}
       />
 
-      <FAB onPress={ctrl.openNewTrip} accessibilityLabel="New trip" />
+      {ctrl.selectionMode ? null : (
+        <FAB onPress={ctrl.openNewTrip} accessibilityLabel="New trip" />
+      )}
+
+      <ConfirmDialog request={ctrl.confirm} onClose={() => ctrl.setConfirm(null)} />
     </View>
   );
 }

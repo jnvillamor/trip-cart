@@ -5,28 +5,33 @@ import { useTheme } from '@/ui/theme/ThemeProvider';
 
 export function ListCard({
   onPress,
+  onLongPress,
   leading,
   title,
   subtitle,
   archived,
   trailing,
+  selected,
 }: {
   onPress: () => void;
+  onLongPress?: () => void;
   leading?: ReactNode;
   title: string;
   subtitle?: string;
   archived?: boolean;
   trailing?: ReactNode;
+  selected?: boolean;
 }) {
   const { tokens } = useTheme();
   return (
     <Pressable
       onPress={onPress}
+      onLongPress={onLongPress}
       style={({ pressed }) => ({
-        backgroundColor: tokens.bg.surface,
+        backgroundColor: selected ? tokens.bg.tonal : tokens.bg.surface,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: tokens.border.subtle,
+        borderColor: selected ? tokens.accent.base : tokens.border.subtle,
         marginVertical: 6,
         padding: 16,
         flexDirection: 'row',
