@@ -1,27 +1,18 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
+import { Text, View } from 'react-native';
+import { ArchiveFooterButton } from '@/ui/components/ArchiveFooterButton';
 import { CategoryForm } from '@/ui/components/CategoryForm';
 import { PageHeader } from '@/ui/components/PageHeader';
-import {
-  useArchiveCategory,
-  useCategory,
-  useRestoreCategory,
-  useUpdateCategory,
-} from '@/ui/hooks/useCategories';
+import { useCategoryEditController } from '@/ui/hooks/category-edit/useCategoryEditController';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
 export default function CategoryEditScreen() {
   const { tokens } = useTheme();
-  const router = useRouter();
   const { id: idParam } = useLocalSearchParams<{ id: string }>();
   const id = Number(idParam);
+  const ctrl = useCategoryEditController(id);
 
-  const { data: category, isLoading } = useCategory(id);
-  const updateCategory = useUpdateCategory(id);
-  const archive = useArchiveCategory(id);
-  const restore = useRestoreCategory(id);
-
-  if (isLoading) {
+  if (ctrl.loading) {
     return (
       <View style={{ flex: 1, backgroundColor: tokens.bg.page }}>
         <PageHeader title="Category" />
@@ -29,7 +20,7 @@ export default function CategoryEditScreen() {
     );
   }
 
-  if (!category) {
+  if (ctrl.notFound) {
     return (
       <View style={{ flex: 1, backgroundColor: tokens.bg.page }}>
         <PageHeader title="Category" />
@@ -40,52 +31,26 @@ export default function CategoryEditScreen() {
     );
   }
 
+  const { category } = ctrl;
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg.page }}>
       <PageHeader title="Edit category" subtitle={category.name} />
       <CategoryForm
         submitLabel="Save changes"
-        busy={updateCategory.isPending}
+        busy={ctrl.saving}
         initialValues={{
           name: category.name,
           icon_name: category.icon_name ?? '',
           color_hex: category.color_hex ?? '',
         }}
-        onSubmit={async (input) => {
-          await updateCategory.mutateAsync(input);
-          router.back();
-        }}
+        onSubmit={ctrl.save}
         footer={
-          <Pressable
-            onPress={async () => {
-              if (category.is_archived) {
-                await restore.mutateAsync();
-              } else {
-                await archive.mutateAsync();
-              }
-              router.back();
-            }}
-            disabled={archive.isPending || restore.isPending}
-            style={({ pressed }) => ({
-              paddingVertical: 14,
-              borderRadius: 14,
-              alignItems: 'center',
-              borderWidth: 1,
-              borderColor: tokens.border.default,
-              backgroundColor: pressed ? tokens.bg.elevated : 'transparent',
-              marginTop: 8,
-            })}
-          >
-            <Text
-              style={{
-                color: category.is_archived ? tokens.text.primary : tokens.danger[0],
-                fontWeight: '600',
-                fontSize: 15,
-              }}
-            >
-              {category.is_archived ? 'Unarchive category' : 'Archive category'}
-            </Text>
-          </Pressable>
+          <ArchiveFooterButton
+            isArchived={category.is_archived}
+            entityLabel="category"
+            busy={ctrl.archiveBusy}
+            onPress={ctrl.toggleArchive}
+          />
         }
       />
     </View>
