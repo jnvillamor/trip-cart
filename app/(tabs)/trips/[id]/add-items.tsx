@@ -1,6 +1,7 @@
 import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
+import { CreateGoodRow } from '@/ui/components/add-items/CreateGoodRow';
 import { EmptyResults } from '@/ui/components/add-items/EmptyResults';
 import { GoodAddRow } from '@/ui/components/add-items/GoodAddRow';
 import { SearchInput } from '@/ui/components/add-items/SearchInput';
@@ -23,6 +24,22 @@ export default function AddItemsScreen() {
         <SearchInput value={ctrl.query} onChange={ctrl.setQuery} />
       </View>
 
+      {ctrl.createSuggestion ? (
+        <View style={{ paddingHorizontal: 16 }}>
+          <CreateGoodRow
+            query={ctrl.createSuggestion.query}
+            suggestedCategory={ctrl.createSuggestion.suggestedCategory}
+            busy={ctrl.creating}
+            onPress={() =>
+              ctrl.createAndAdd(
+                ctrl.createSuggestion!.query,
+                ctrl.createSuggestion!.suggestedCategory?.id,
+              )
+            }
+          />
+        </View>
+      ) : null}
+
       <FlashList
         data={ctrl.rows}
         keyExtractor={(row) => row.key}
@@ -42,7 +59,9 @@ export default function AddItemsScreen() {
         }}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}
         ListEmptyComponent={
-          !ctrl.isLoading ? <EmptyResults query={ctrl.debouncedQuery} /> : null
+          !ctrl.isLoading && !ctrl.createSuggestion ? (
+            <EmptyResults query={ctrl.debouncedQuery} />
+          ) : null
         }
       />
     </View>

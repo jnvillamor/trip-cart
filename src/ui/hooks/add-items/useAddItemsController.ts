@@ -1,8 +1,13 @@
 import { useMemo, useState } from 'react';
-import { Good } from '@/domain/entities';
+import { suggestCategoryByName } from '@/domain/category-suggest';
+import { Category, Good } from '@/domain/entities';
 import { useCategories } from '@/ui/hooks/useCategories';
 import { useDebouncedValue } from '@/ui/hooks/useDebouncedValue';
-import { useGoods, useGoodSuggestionsForStore } from '@/ui/hooks/useGoods';
+import {
+  useCreateGood,
+  useGoods,
+  useGoodSuggestionsForStore,
+} from '@/ui/hooks/useGoods';
 import { useTrip } from '@/ui/hooks/useTrips';
 import {
   useCreateTripItem,
@@ -16,6 +21,11 @@ export type Row =
   | { kind: 'section'; key: string; label: string }
   | { kind: 'good'; key: string; good: Good };
 
+export type CreateSuggestion = {
+  query: string;
+  suggestedCategory?: Category;
+};
+
 export function useAddItemsController(tripId: number) {
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebouncedValue(query, 150);
@@ -25,6 +35,7 @@ export function useAddItemsController(tripId: number) {
   const { data: categories = [] } = useCategories();
   const { data: items = [] } = useTripItems(tripId);
   const { data: suggestionCounts } = useGoodSuggestionsForStore(trip?.store_id, tripId);
+  const createGood = useCreateGood();
   const createItem = useCreateTripItem(tripId);
   const removeItem = useRemoveTripItem(tripId);
 
@@ -37,8 +48,22 @@ export function useAddItemsController(tripId: number) {
     [items],
   );
 
+  const trimmedQuery = debouncedQuery.trim();
+  const isSearching = trimmedQuery.length > 0;
+
+  const createSuggestion = useMemo<CreateSuggestion | undefined>(() => {
+    if (!isSearching) return undefined;
+    const exact = goods.some(
+      (g) => g.name.toLowerCase() === trimmedQuery.toLowerCase(),
+    );
+    if (exact) return undefined;
+    return {
+      query: trimmedQuery,
+      suggestedCategory: suggestCategoryByName(trimmedQuery, categories),
+    };
+  }, [goods, trimmedQuery, isSearching, categories]);
+
   const rows = useMemo<Row[]>(() => {
-    const isSearching = debouncedQuery.trim().length > 0;
     if (isSearching) {
       return goods.map((g) => ({ kind: 'good', key: `g-${g.id}`, good: g }));
     }
@@ -61,7 +86,7 @@ export function useAddItemsController(tripId: number) {
     }
     for (const g of rest) out.push({ kind: 'good', key: `g-${g.id}`, good: g });
     return out;
-  }, [goods, suggestionCounts, debouncedQuery]);
+  }, [goods, suggestionCounts, isSearching]);
 
   function toggle(good: Good) {
     const existing = itemByGoodId.get(good.id);
@@ -72,17 +97,29 @@ export function useAddItemsController(tripId: number) {
     }
   }
 
+  async function createAndAdd(name: string, suggestedCategoryId: number | undefined) {
+    const newGood = await createGood.mutateAsync({
+      name,
+      default_category_id: suggestedCategoryId,
+    });
+    await createItem.mutateAsync({ good_id: newGood.id, planned_quantity: 1 });
+    setQuery('');
+  }
+
   return {
     query,
     setQuery,
     debouncedQuery,
     rows,
+    createSuggestion,
     isLoading,
+    creating: createGood.isPending || createItem.isPending,
     isAdded: (goodId: number) => itemByGoodId.has(goodId),
     categoryFor: (good: Good) =>
       good.default_category_id != null
         ? categoryById.get(good.default_category_id)
         : undefined,
     toggle,
+    createAndAdd,
   } as const;
 }
