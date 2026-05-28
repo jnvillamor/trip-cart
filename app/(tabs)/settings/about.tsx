@@ -50,13 +50,15 @@ export default function AboutScreen() {
           />
         </Section>
 
-        <Section title="Links" tokens={tokens}>
-          <LinkRow
-            icon="code"
-            label="Source code"
-            href="https://github.com/jnvillamor/trip-cart"
+        <Section title="Developer" tokens={tokens}>
+          <DeveloperRow
+            name="John Noel Villamor"
+            handle="jnvillamor"
             tokens={tokens}
           />
+        </Section>
+
+        <Section title="Links" tokens={tokens}>
           <LinkRow
             icon="bug-report"
             label="Report an issue"
@@ -148,6 +150,54 @@ function InfoRow({
       </Text>
       <Text style={{ color: tokens.text.tertiary, fontSize: 14, fontWeight: '600' }}>
         {value}
+      </Text>
+    </View>
+  );
+}
+
+function DeveloperRow({
+  name,
+  handle,
+  tokens,
+}: {
+  name: string;
+  handle: string;
+  tokens: Theme;
+}) {
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 14,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+      }}
+    >
+      <View
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: 8,
+          backgroundColor: tokens.bg.tonal,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <MaterialIcons name="person" color={tokens.accent.base} size={18} />
+      </View>
+      <Text
+        style={{ flex: 1, color: tokens.text.primary, fontSize: 14, fontWeight: '500' }}
+      >
+        {name}{' '}
+        <Text
+          onPress={() =>
+            Linking.openURL(`https://github.com/${handle}`).catch(() => undefined)
+          }
+          style={{ color: tokens.accent.base, fontWeight: '600' }}
+        >
+          (@{handle})
+        </Text>
       </Text>
     </View>
   );
