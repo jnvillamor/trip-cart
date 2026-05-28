@@ -12,6 +12,7 @@ export default function InsightsIndex() {
   const { tokens } = useTheme();
   return (
     <TopTab.Navigator
+      id={undefined}
       screenOptions={{
         tabBarScrollEnabled: true,
         tabBarStyle: {
