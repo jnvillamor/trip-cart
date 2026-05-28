@@ -1,7 +1,8 @@
-import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams } from 'expo-router';
-import { Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import Animated, { LinearTransition } from 'react-native-reanimated';
 import { NumpadSheet } from '@/ui/components/NumpadSheet';
+import { BoughtDivider } from '@/ui/components/shopping/BoughtDivider';
 import { ItemEditSheet } from '@/ui/components/shopping/ItemEditSheet';
 import { ShoppingHeader } from '@/ui/components/shopping/ShoppingHeader';
 import { ShoppingItemRow } from '@/ui/components/shopping/ShoppingItemRow';
@@ -34,6 +35,9 @@ export default function ShoppingModeScreen() {
     );
   }
 
+  const empty = ctrl.unboughtItems.length === 0 && ctrl.boughtItems.length === 0;
+  const transition = LinearTransition.springify().damping(18).stiffness(180);
+
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg.page }}>
       <ShoppingHeader
@@ -44,37 +48,66 @@ export default function ShoppingModeScreen() {
         onExit={ctrl.exit}
       />
 
-      <FlashList
-        data={ctrl.sortedItems}
-        keyExtractor={(item) => String(item.id)}
-        renderItem={({ item }) => (
-          <ShoppingItemRow
-            item={item}
-            good={ctrl.goodFor(item)}
-            currency={ctrl.currency}
-            onToggleChecked={() => ctrl.toggleChecked(item)}
-            onEdit={() => ctrl.setEditing(item.id)}
-          />
-        )}
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingTop: 12,
-          paddingBottom: 24,
-        }}
-        ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
-        ListEmptyComponent={
-          <View style={{ padding: 32, alignItems: 'center', gap: 8 }}>
-            <Text style={{ color: tokens.text.primary, fontSize: 16, fontWeight: '700' }}>
-              No items on this trip
-            </Text>
-            <Text
-              style={{ color: tokens.text.tertiary, fontSize: 13, textAlign: 'center' }}
-            >
-              Add items from the trip detail screen before you start shopping.
-            </Text>
-          </View>
-        }
-      />
+      {empty ? (
+        <View
+          style={{
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 32,
+            gap: 8,
+          }}
+        >
+          <Text style={{ color: tokens.text.primary, fontSize: 16, fontWeight: '700' }}>
+            No items on this trip
+          </Text>
+          <Text
+            style={{ color: tokens.text.tertiary, fontSize: 13, textAlign: 'center' }}
+          >
+            Add items from the trip detail screen before you start shopping.
+          </Text>
+        </View>
+      ) : (
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingTop: 12,
+            paddingBottom: 24,
+            gap: 10,
+          }}
+        >
+          {ctrl.unboughtItems.map((item) => (
+            <Animated.View key={item.id} layout={transition}>
+              <ShoppingItemRow
+                item={item}
+                good={ctrl.goodFor(item)}
+                currency={ctrl.currency}
+                onToggleChecked={() => ctrl.toggleChecked(item)}
+                onEdit={() => ctrl.setEditing(item.id)}
+              />
+            </Animated.View>
+          ))}
+
+          {ctrl.boughtItems.length > 0 ? (
+            <Animated.View layout={transition}>
+              <BoughtDivider count={ctrl.boughtItems.length} />
+            </Animated.View>
+          ) : null}
+
+          {ctrl.boughtItems.map((item) => (
+            <Animated.View key={item.id} layout={transition}>
+              <ShoppingItemRow
+                item={item}
+                good={ctrl.goodFor(item)}
+                currency={ctrl.currency}
+                onToggleChecked={() => ctrl.toggleChecked(item)}
+                onEdit={() => ctrl.setEditing(item.id)}
+              />
+            </Animated.View>
+          ))}
+        </ScrollView>
+      )}
 
       <TotalFooter runningTotal={ctrl.runningTotal} currency={ctrl.currency} />
 

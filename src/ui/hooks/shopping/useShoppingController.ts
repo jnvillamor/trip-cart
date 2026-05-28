@@ -43,6 +43,14 @@ export function useShoppingController(tripId: number) {
     () => items.slice().sort((a, b) => a.sort_order - b.sort_order),
     [items],
   );
+  const unboughtItems = useMemo(
+    () => sortedItems.filter((i) => !i.is_checked),
+    [sortedItems],
+  );
+  const boughtItems = useMemo(
+    () => sortedItems.filter((i) => i.is_checked),
+    [sortedItems],
+  );
 
   if (isLoading) return { loading: true, notFound: false, trip: null } as const;
   if (!trip) return { loading: false, notFound: true, trip: null } as const;
@@ -100,6 +108,8 @@ export function useShoppingController(tripId: number) {
     store,
     items,
     sortedItems,
+    unboughtItems,
+    boughtItems,
     runningTotal,
     itemsBought,
     itemsTotal: items.length,
