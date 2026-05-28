@@ -4,6 +4,7 @@ import { Text, View } from 'react-native';
 import { ByCategoryTab } from '@/ui/components/insights-by-category/ByCategoryTab';
 import { ByStoreTab } from '@/ui/components/insights-by-store/ByStoreTab';
 import { OverviewTab } from '@/ui/components/insights-overview/OverviewTab';
+import { PriceHistoryTab } from '@/ui/components/insights-price-history/PriceHistoryTab';
 import { Theme } from '@/ui/theme/tokens';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
@@ -47,11 +48,6 @@ export default function InsightsIndex() {
       <TopTab.Screen name="Trip Summaries" component={TripSummariesTab} />
     </TopTab.Navigator>
   );
-}
-
-function PriceHistoryTab() {
-  const { tokens } = useTheme();
-  return <Placeholder icon="timeline" title="Price history" tokens={tokens} />;
 }
 
 function TripSummariesTab() {
