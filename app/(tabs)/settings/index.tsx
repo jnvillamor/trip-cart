@@ -1,17 +1,9 @@
-import { MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { PageHeader } from '@/ui/components/PageHeader';
-import { Theme } from '@/ui/theme/tokens';
+import { SettingsRow, SettingsRowDef } from '@/ui/components/settings-index/SettingsRow';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
-type Row = {
-  href: string;
-  icon: keyof typeof MaterialIcons.glyphMap;
-  title: string;
-};
-
-const ROWS: Row[] = [
+const ROWS: SettingsRowDef[] = [
   { href: '/settings/appearance', icon: 'palette', title: 'Appearance' },
   { href: '/settings/currency', icon: 'attach-money', title: 'Currency' },
   { href: '/settings/data', icon: 'backup', title: 'Data' },
@@ -35,57 +27,10 @@ export default function SettingsIndex() {
           }}
         >
           {ROWS.map((row, i) => (
-            <SettingsRow
-              key={row.href}
-              row={row}
-              isLast={i === ROWS.length - 1}
-              tokens={tokens}
-            />
+            <SettingsRow key={row.href} row={row} isLast={i === ROWS.length - 1} />
           ))}
         </View>
       </ScrollView>
     </View>
-  );
-}
-
-function SettingsRow({ row, isLast, tokens }: { row: Row; isLast: boolean; tokens: Theme }) {
-  const router = useRouter();
-  return (
-    <Pressable
-      onPress={() => router.push(row.href as never)}
-      style={({ pressed }) => ({
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 16,
-        gap: 16,
-        backgroundColor: pressed ? tokens.bg.elevated : 'transparent',
-        borderBottomWidth: isLast ? 0 : 1,
-        borderBottomColor: tokens.border.subtle,
-      })}
-    >
-      <View
-        style={{
-          width: 32,
-          height: 32,
-          borderRadius: 8,
-          backgroundColor: tokens.bg.tonal,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <MaterialIcons name={row.icon} color={tokens.accent.base} size={18} />
-      </View>
-      <Text
-        style={{
-          flex: 1,
-          color: tokens.text.primary,
-          fontSize: 15,
-          fontWeight: '500',
-        }}
-      >
-        {row.title}
-      </Text>
-      <MaterialIcons name="chevron-right" color={tokens.text.tertiary} size={20} />
-    </Pressable>
   );
 }
