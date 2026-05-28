@@ -1,6 +1,7 @@
 import { Modal, Pressable, Text, View } from 'react-native';
 import { Good, TripItem } from '@/domain/entities';
 import { QuantityStepper } from '@/ui/components/trip-detail/QuantityStepper';
+import { effectivePrice, effectiveQty } from '@/ui/hooks/shopping/useShoppingController';
 import { formatMoney } from '@/ui/lib/format';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
@@ -24,11 +25,9 @@ export function ItemEditSheet({
   const { tokens } = useTheme();
   if (!item) return null;
 
-  const qty = item.is_checked ? item.actual_quantity ?? 0 : item.planned_quantity ?? 0;
-  const price = item.is_checked
-    ? item.actual_unit_price ?? 0
-    : item.planned_unit_price ?? 0;
-  const fieldLabel = item.is_checked ? 'Actual' : 'Planned';
+  const qty = effectiveQty(item);
+  const price = effectivePrice(item);
+  const fieldLabel = item.is_checked ? 'Bought' : 'Not bought yet';
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>

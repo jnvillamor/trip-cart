@@ -2,6 +2,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Good, TripItem } from '@/domain/entities';
+import { effectivePrice, effectiveQty } from '@/ui/hooks/shopping/useShoppingController';
 import { formatMoney, formatQty } from '@/ui/lib/format';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
@@ -19,10 +20,8 @@ export function ShoppingItemRow({
   onEdit: () => void;
 }) {
   const { tokens } = useTheme();
-  const qty = item.is_checked ? item.actual_quantity ?? 0 : item.planned_quantity ?? 0;
-  const price = item.is_checked
-    ? item.actual_unit_price ?? 0
-    : item.planned_unit_price ?? 0;
+  const qty = effectiveQty(item);
+  const price = effectivePrice(item);
   const line = qty * price;
 
   const renderRightActions = () => (
