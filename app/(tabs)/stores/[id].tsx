@@ -1,27 +1,18 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
+import { Text, View } from 'react-native';
+import { ArchiveFooterButton } from '@/ui/components/ArchiveFooterButton';
 import { PageHeader } from '@/ui/components/PageHeader';
 import { StoreForm } from '@/ui/components/StoreForm';
-import {
-  useArchiveStore,
-  useRestoreStore,
-  useStore,
-  useUpdateStore,
-} from '@/ui/hooks/useStores';
+import { useStoreEditController } from '@/ui/hooks/store-edit/useStoreEditController';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
 export default function StoreEditScreen() {
   const { tokens } = useTheme();
-  const router = useRouter();
   const { id: idParam } = useLocalSearchParams<{ id: string }>();
   const id = Number(idParam);
+  const ctrl = useStoreEditController(id);
 
-  const { data: store, isLoading } = useStore(id);
-  const updateStore = useUpdateStore(id);
-  const archive = useArchiveStore(id);
-  const restore = useRestoreStore(id);
-
-  if (isLoading) {
+  if (ctrl.loading) {
     return (
       <View style={{ flex: 1, backgroundColor: tokens.bg.page }}>
         <PageHeader title="Store" />
@@ -29,7 +20,7 @@ export default function StoreEditScreen() {
     );
   }
 
-  if (!store) {
+  if (ctrl.notFound) {
     return (
       <View style={{ flex: 1, backgroundColor: tokens.bg.page }}>
         <PageHeader title="Store" />
@@ -40,52 +31,26 @@ export default function StoreEditScreen() {
     );
   }
 
+  const { store } = ctrl;
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg.page }}>
       <PageHeader title="Edit store" subtitle={store.name} />
       <StoreForm
         submitLabel="Save changes"
-        busy={updateStore.isPending}
+        busy={ctrl.saving}
         initialValues={{
           name: store.name,
           currency_code_override: store.currency_code_override ?? '',
           notes: store.notes ?? '',
         }}
-        onSubmit={async (input) => {
-          await updateStore.mutateAsync(input);
-          router.back();
-        }}
+        onSubmit={ctrl.save}
         footer={
-          <Pressable
-            onPress={async () => {
-              if (store.is_archived) {
-                await restore.mutateAsync();
-              } else {
-                await archive.mutateAsync();
-              }
-              router.back();
-            }}
-            disabled={archive.isPending || restore.isPending}
-            style={({ pressed }) => ({
-              paddingVertical: 14,
-              borderRadius: 14,
-              alignItems: 'center',
-              borderWidth: 1,
-              borderColor: tokens.border.default,
-              backgroundColor: pressed ? tokens.bg.elevated : 'transparent',
-              marginTop: 8,
-            })}
-          >
-            <Text
-              style={{
-                color: store.is_archived ? tokens.text.primary : tokens.danger[0],
-                fontWeight: '600',
-                fontSize: 15,
-              }}
-            >
-              {store.is_archived ? 'Unarchive store' : 'Archive store'}
-            </Text>
-          </Pressable>
+          <ArchiveFooterButton
+            isArchived={store.is_archived}
+            entityLabel="store"
+            busy={ctrl.archiveBusy}
+            onPress={ctrl.toggleArchive}
+          />
         }
       />
     </View>

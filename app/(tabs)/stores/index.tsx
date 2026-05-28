@@ -1,24 +1,17 @@
 import { FlashList } from '@shopify/flash-list';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Store } from '@/domain/entities';
 import { ArchivedToggle } from '@/ui/components/ArchivedToggle';
 import { FAB, useFabBottomReserve } from '@/ui/components/FAB';
-import { ListCard } from '@/ui/components/ListCard';
 import { ListEmptyState } from '@/ui/components/ListEmptyState';
-import { useStores } from '@/ui/hooks/useStores';
-import { Theme } from '@/ui/theme/tokens';
+import { StoreRow } from '@/ui/components/stores-list/StoreRow';
+import { useStoresListController } from '@/ui/hooks/stores-list/useStoresListController';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
 export default function StoresListScreen() {
   const { tokens } = useTheme();
-  const router = useRouter();
   const fabReserve = useFabBottomReserve();
-  const [showArchived, setShowArchived] = useState(false);
-
-  const { data: stores = [], isLoading } = useStores({ archived: showArchived });
+  const ctrl = useStoresListController();
 
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg.page }}>
@@ -35,23 +28,19 @@ export default function StoresListScreen() {
             Stores
           </Text>
           <View style={{ marginTop: 16 }}>
-            <ArchivedToggle value={showArchived} onChange={setShowArchived} />
+            <ArchivedToggle value={ctrl.showArchived} onChange={ctrl.setShowArchived} />
           </View>
         </View>
       </SafeAreaView>
 
       <FlashList
-        data={stores}
+        data={ctrl.stores}
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => (
-          <StoreRow
-            store={item}
-            tokens={tokens}
-            onPress={() => router.push(`/stores/${item.id}` as never)}
-          />
+          <StoreRow store={item} onPress={() => ctrl.openStore(item.id)} />
         )}
         ListEmptyComponent={
-          !isLoading ? (
+          !ctrl.isLoading ? (
             <ListEmptyState
               icon="storefront"
               title="No stores yet"
@@ -66,62 +55,7 @@ export default function StoresListScreen() {
         }}
       />
 
-      <FAB
-        onPress={() => router.push('/stores/new' as never)}
-        accessibilityLabel="Add store"
-      />
+      <FAB onPress={ctrl.openNewStore} accessibilityLabel="Add store" />
     </View>
-  );
-}
-
-function StoreRow({
-  store,
-  tokens,
-  onPress,
-}: {
-  store: Store;
-  tokens: Theme;
-  onPress: () => void;
-}) {
-  const initial = store.name.charAt(0).toUpperCase();
-  return (
-    <ListCard
-      onPress={onPress}
-      archived={store.is_archived}
-      title={store.name}
-      subtitle={store.notes ?? undefined}
-      leading={
-        <View
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 14,
-            backgroundColor: tokens.bg.tonal,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Text style={{ color: tokens.accent.base, fontSize: 18, fontWeight: '700' }}>
-            {initial}
-          </Text>
-        </View>
-      }
-      trailing={
-        store.currency_code_override ? (
-          <View
-            style={{
-              backgroundColor: tokens.bg.tonal,
-              paddingHorizontal: 10,
-              paddingVertical: 5,
-              borderRadius: 8,
-            }}
-          >
-            <Text style={{ color: tokens.text.secondary, fontSize: 11, fontWeight: '700' }}>
-              {store.currency_code_override}
-            </Text>
-          </View>
-        ) : null
-      }
-    />
   );
 }
