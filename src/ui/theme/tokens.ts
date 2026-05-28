@@ -52,7 +52,7 @@ export const darkTheme: Theme = {
   text: {
     primary: '#f5f5f5',
     secondary: '#c4c4c4',
-    tertiary: '#888888',
+    tertiary: '#9a9a9a',
     onAccent: '#04343a',
   },
   border: {
@@ -107,7 +107,7 @@ export const lightTheme: Theme = {
   text: {
     primary: '#1c2223',
     secondary: '#4f4f4f',
-    tertiary: '#7d7d7d',
+    tertiary: '#6b6b6b',
     onAccent: '#ffffff',
   },
   border: {
