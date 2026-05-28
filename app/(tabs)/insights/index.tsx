@@ -1,6 +1,7 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { Text, View } from 'react-native';
+import { ByStoreTab } from '@/ui/components/insights-by-store/ByStoreTab';
 import { OverviewTab } from '@/ui/components/insights-overview/OverviewTab';
 import { Theme } from '@/ui/theme/tokens';
 import { useTheme } from '@/ui/theme/ThemeProvider';
@@ -45,11 +46,6 @@ export default function InsightsIndex() {
       <TopTab.Screen name="Trip Summaries" component={TripSummariesTab} />
     </TopTab.Navigator>
   );
-}
-
-function ByStoreTab() {
-  const { tokens } = useTheme();
-  return <Placeholder icon="storefront" title="Spend by store" tokens={tokens} />;
 }
 
 function ByCategoryTab() {
