@@ -52,6 +52,7 @@ export function useShoppingController(tripId: number) {
   const [editing, setEditing] = useState<number | null>(null);
   const [priceEdit, setPriceEdit] = useState<PriceEditTarget | null>(null);
   const [confirm, setConfirm] = useState<ConfirmRequest | null>(null);
+  const [completeOpen, setCompleteOpen] = useState(false);
 
   const goodById = useMemo(() => new Map(goods.map((g) => [g.id, g])), [goods]);
   const sortedItems = useMemo(
@@ -77,19 +78,17 @@ export function useShoppingController(tripId: number) {
   const editingItem = editing != null ? items.find((i) => i.id === editing) : undefined;
 
   function confirmComplete() {
-    setConfirm({
-      title: 'Complete this trip?',
-      message: 'Completed trips are locked. Totals will be finalized.',
-      confirmLabel: 'Complete',
-      onConfirm: async () => {
-        await completeTrip.mutateAsync();
-        if (router.canGoBack()) {
-          router.back();
-        } else {
-          router.replace(`/trips/${tripId}` as never);
-        }
-      },
-    });
+    setCompleteOpen(true);
+  }
+
+  async function doComplete() {
+    await completeTrip.mutateAsync();
+    setCompleteOpen(false);
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace(`/trips/${tripId}` as never);
+    }
   }
 
   function toggleChecked(item: TripItem) {
@@ -150,14 +149,17 @@ export function useShoppingController(tripId: number) {
     priceEdit,
     confirm,
     completing: completeTrip.isPending,
+    completeOpen,
     setEditing,
     setPriceEdit,
     setConfirm,
+    setCompleteOpen,
     toggleChecked,
     adjustQty,
     openPriceEditor,
     savePrice,
     confirmComplete,
+    doComplete,
     openAddItems: () => router.push(`/trips/${tripId}/add-items` as never),
     exit: () => router.back(),
   } as const;

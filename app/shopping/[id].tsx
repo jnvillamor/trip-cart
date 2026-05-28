@@ -5,6 +5,7 @@ import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { NumpadSheet } from '@/ui/components/NumpadSheet';
 import { AddItemRow } from '@/ui/components/shopping/AddItemRow';
 import { BoughtDivider } from '@/ui/components/shopping/BoughtDivider';
+import { CompleteTripSheet } from '@/ui/components/shopping/CompleteTripSheet';
 import { ItemEditSheet } from '@/ui/components/shopping/ItemEditSheet';
 import { ShoppingHeader } from '@/ui/components/shopping/ShoppingHeader';
 import { ShoppingItemRow } from '@/ui/components/shopping/ShoppingItemRow';
@@ -158,6 +159,18 @@ export default function ShoppingModeScreen() {
       />
 
       <ConfirmDialog request={ctrl.confirm} onClose={() => ctrl.setConfirm(null)} />
+
+      <CompleteTripSheet
+        visible={ctrl.completeOpen}
+        plannedTotal={ctrl.plannedTotal}
+        actualTotal={ctrl.runningTotal}
+        itemsBought={ctrl.itemsBought}
+        itemsTotal={ctrl.itemsTotal}
+        currency={ctrl.currency}
+        busy={ctrl.completing}
+        onConfirm={ctrl.doComplete}
+        onClose={() => ctrl.setCompleteOpen(false)}
+      />
     </View>
   );
 }
