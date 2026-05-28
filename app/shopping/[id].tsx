@@ -1,6 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { ScrollView, Text, View } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
+import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { NumpadSheet } from '@/ui/components/NumpadSheet';
 import { BoughtDivider } from '@/ui/components/shopping/BoughtDivider';
 import { ItemEditSheet } from '@/ui/components/shopping/ItemEditSheet';
@@ -109,7 +110,13 @@ export default function ShoppingModeScreen() {
         </ScrollView>
       )}
 
-      <TotalFooter runningTotal={ctrl.runningTotal} currency={ctrl.currency} />
+      <TotalFooter
+        runningTotal={ctrl.runningTotal}
+        plannedTotal={ctrl.plannedTotal}
+        currency={ctrl.currency}
+        onComplete={ctrl.confirmComplete}
+        completing={ctrl.completing}
+      />
 
       <ItemEditSheet
         visible={ctrl.editing != null}
@@ -132,6 +139,8 @@ export default function ShoppingModeScreen() {
         onSave={ctrl.savePrice}
         onClose={() => ctrl.setPriceEdit(null)}
       />
+
+      <ConfirmDialog request={ctrl.confirm} onClose={() => ctrl.setConfirm(null)} />
     </View>
   );
 }

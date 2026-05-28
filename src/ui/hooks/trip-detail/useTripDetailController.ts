@@ -154,6 +154,7 @@ export function useTripDetailController(tripId: number) {
       confirmLabel: 'Start',
       onConfirm: async () => {
         await startTrip.mutateAsync();
+        router.replace(`/shopping/${tripId}` as never);
       },
     });
   const confirmComplete = () =>

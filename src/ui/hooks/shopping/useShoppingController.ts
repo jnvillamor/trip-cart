@@ -2,9 +2,10 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { TripItem } from '@/domain/entities';
 import { UpdateTripItemInput } from '@/domain/schemas';
+import { ConfirmRequest } from '@/ui/components/ConfirmDialog';
 import { useGoods } from '@/ui/hooks/useGoods';
 import { useStores } from '@/ui/hooks/useStores';
-import { useTrip } from '@/ui/hooks/useTrips';
+import { useCompleteTrip, useTrip } from '@/ui/hooks/useTrips';
 import {
   useRemoveTripItem,
   useTripItems,
@@ -32,6 +33,10 @@ function boughtSubtotal(item: TripItem): number {
   return (item.actual_quantity ?? 0) * (item.actual_unit_price ?? 0);
 }
 
+function plannedSubtotal(item: TripItem): number {
+  return (item.planned_quantity ?? 0) * (item.planned_unit_price ?? 0);
+}
+
 export function useShoppingController(tripId: number) {
   const router = useRouter();
 
@@ -42,9 +47,11 @@ export function useShoppingController(tripId: number) {
 
   const updateItem = useUpdateTripItem(tripId);
   const removeItem = useRemoveTripItem(tripId);
+  const completeTrip = useCompleteTrip(tripId);
 
   const [editing, setEditing] = useState<number | null>(null);
   const [priceEdit, setPriceEdit] = useState<PriceEditTarget | null>(null);
+  const [confirm, setConfirm] = useState<ConfirmRequest | null>(null);
 
   const goodById = useMemo(() => new Map(goods.map((g) => [g.id, g])), [goods]);
   const sortedItems = useMemo(
@@ -65,8 +72,21 @@ export function useShoppingController(tripId: number) {
 
   const store = stores.find((s) => s.id === trip.store_id);
   const runningTotal = boughtItems.reduce((sum, i) => sum + boughtSubtotal(i), 0);
+  const plannedTotal = items.reduce((sum, i) => sum + plannedSubtotal(i), 0);
   const itemsBought = boughtItems.length;
   const editingItem = editing != null ? items.find((i) => i.id === editing) : undefined;
+
+  function confirmComplete() {
+    setConfirm({
+      title: 'Complete this trip?',
+      message: 'Completed trips are locked. Totals will be finalized.',
+      confirmLabel: 'Complete',
+      onConfirm: async () => {
+        await completeTrip.mutateAsync();
+        router.replace(`/trips/${tripId}` as never);
+      },
+    });
+  }
 
   function toggleChecked(item: TripItem) {
     const patch: Partial<UpdateTripItemInput> = { is_checked: !item.is_checked };
@@ -116,6 +136,7 @@ export function useShoppingController(tripId: number) {
     unboughtItems,
     boughtItems,
     runningTotal,
+    plannedTotal,
     itemsBought,
     itemsTotal: items.length,
     currency: trip.resolved_currency_code,
@@ -123,12 +144,16 @@ export function useShoppingController(tripId: number) {
     editing,
     editingItem,
     priceEdit,
+    confirm,
+    completing: completeTrip.isPending,
     setEditing,
     setPriceEdit,
+    setConfirm,
     toggleChecked,
     adjustQty,
     openPriceEditor,
     savePrice,
+    confirmComplete,
     exit: () => router.back(),
   } as const;
 }
