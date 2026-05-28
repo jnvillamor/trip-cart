@@ -83,7 +83,11 @@ export function useShoppingController(tripId: number) {
       confirmLabel: 'Complete',
       onConfirm: async () => {
         await completeTrip.mutateAsync();
-        router.replace(`/trips/${tripId}` as never);
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace(`/trips/${tripId}` as never);
+        }
       },
     });
   }
