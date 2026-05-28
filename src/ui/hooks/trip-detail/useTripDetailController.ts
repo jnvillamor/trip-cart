@@ -130,10 +130,6 @@ export function useTripDetailController(tripId: number) {
     );
   }
 
-  async function handleDragEnd(newOrder: TripItem[]) {
-    await applyOrder(newOrder);
-  }
-
   function getItemCategoryId(item: TripItem): number | null {
     return (
       item.category_id_snapshot ?? goodById.get(item.good_id)?.default_category_id ?? null
@@ -324,7 +320,6 @@ export function useTripDetailController(tripId: number) {
     adjustQty,
     openPriceEditor,
     savePrice,
-    handleDragEnd,
     categoryFor,
     goodFor,
     getItemCategoryId,

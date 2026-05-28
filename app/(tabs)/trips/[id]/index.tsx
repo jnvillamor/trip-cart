@@ -1,8 +1,7 @@
+import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams } from 'expo-router';
 import { Platform, Text, View } from 'react-native';
-import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { TripItem } from '@/domain/entities';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { NumpadSheet } from '@/ui/components/NumpadSheet';
 import { PageHeader } from '@/ui/components/PageHeader';
@@ -64,39 +63,10 @@ export default function TripDetailScreen() {
     adjustQty,
     openPriceEditor,
     savePrice,
-    handleDragEnd,
     categoryFor,
     goodFor,
     getItemCategoryId,
   } = ctrl;
-
-  function renderRow({ item, drag, isActive, getIndex }: RenderItemParams<TripItem>) {
-    const index = getIndex() ?? 0;
-    const prev = index > 0 ? sortedItems[index - 1] : undefined;
-    const showHeader = !prev || getItemCategoryId(item) !== getItemCategoryId(prev);
-    const cat = categoryFor(item);
-    return (
-      <View>
-        {showHeader ? (
-          <SectionHeader
-            name={cat?.name ?? 'Uncategorized'}
-            color={cat?.color_hex ?? '#9E9E9E'}
-          />
-        ) : null}
-        <ItemRow
-          item={item}
-          good={goodFor(item)}
-          currency={currency}
-          editable={editable}
-          isShopping={isShopping}
-          isActive={isActive}
-          onLongPress={editable ? drag : undefined}
-          onAdjustQty={(delta) => adjustQty(item, delta)}
-          onPressPrice={() => openPriceEditor(item)}
-        />
-      </View>
-    );
-  }
 
   return (
     <View
@@ -118,18 +88,40 @@ export default function TripDetailScreen() {
         />
       </View>
 
-      <DraggableFlatList
+      <FlashList
         data={sortedItems}
         keyExtractor={(item) => String(item.id)}
-        onDragEnd={({ data }) => handleDragEnd(data)}
-        renderItem={renderRow}
-        containerStyle={{ flex: 1 }}
+        renderItem={({ item, index }) => {
+          const prev = index > 0 ? sortedItems[index - 1] : undefined;
+          const showHeader =
+            !prev || getItemCategoryId(item) !== getItemCategoryId(prev);
+          const cat = categoryFor(item);
+          return (
+            <View>
+              {showHeader ? (
+                <SectionHeader
+                  name={cat?.name ?? 'Uncategorized'}
+                  color={cat?.color_hex ?? '#9E9E9E'}
+                />
+              ) : null}
+              <ItemRow
+                item={item}
+                good={goodFor(item)}
+                currency={currency}
+                editable={editable}
+                isShopping={isShopping}
+                onAdjustQty={(delta) => adjustQty(item, delta)}
+                onPressPrice={() => openPriceEditor(item)}
+              />
+            </View>
+          );
+        }}
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingTop: 8,
           paddingBottom: 24,
-          gap: 12,
         }}
+        ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
         ListEmptyComponent={
           <View
             style={{

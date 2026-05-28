@@ -7,6 +7,8 @@ export default function SettingsLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
+        gestureEnabled: true,
+        fullScreenGestureEnabled: true,
         contentStyle: { backgroundColor: tokens.bg.page },
       }}
     >

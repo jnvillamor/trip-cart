@@ -7,6 +7,8 @@ export default function CatalogLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
+        gestureEnabled: true,
+        fullScreenGestureEnabled: true,
         contentStyle: { backgroundColor: tokens.bg.page },
       }}
     >
@@ -16,7 +18,7 @@ export default function CatalogLayout() {
         name="goods/new"
         options={{
           presentation: 'formSheet',
-          sheetAllowedDetents: 'large',
+          sheetAllowedDetents: [1.0],
           sheetGrabberVisible: true,
           sheetCornerRadius: 24,
         }}
@@ -26,7 +28,7 @@ export default function CatalogLayout() {
         name="categories/new"
         options={{
           presentation: 'formSheet',
-          sheetAllowedDetents: 'large',
+          sheetAllowedDetents: [1.0],
           sheetGrabberVisible: true,
           sheetCornerRadius: 24,
         }}

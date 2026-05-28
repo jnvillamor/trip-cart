@@ -11,8 +11,6 @@ export function ItemRow({
   currency,
   editable,
   isShopping,
-  isActive,
-  onLongPress,
   onAdjustQty,
   onPressPrice,
 }: {
@@ -21,8 +19,6 @@ export function ItemRow({
   currency: string;
   editable: boolean;
   isShopping: boolean;
-  isActive: boolean;
-  onLongPress?: () => void;
   onAdjustQty: (delta: number) => void;
   onPressPrice: () => void;
 }) {
@@ -36,24 +32,16 @@ export function ItemRow({
   const lineTotal = useActual ? actual : planned;
 
   return (
-    <Pressable
-      onLongPress={onLongPress}
-      delayLongPress={250}
+    <View
       style={{
         flexDirection: 'row',
         alignItems: 'center',
         padding: 14,
         gap: 12,
-        backgroundColor: isActive ? tokens.bg.elevated : tokens.bg.surface,
+        backgroundColor: tokens.bg.surface,
         borderRadius: 14,
         borderWidth: 1,
-        borderColor: isActive ? tokens.accent.base : tokens.border.subtle,
-        marginVertical: 3,
-        shadowColor: '#000',
-        shadowOpacity: isActive ? 0.2 : 0,
-        shadowOffset: { width: 0, height: 4 },
-        shadowRadius: 8,
-        elevation: isActive ? 4 : 0,
+        borderColor: tokens.border.subtle,
       }}
     >
       <View
@@ -108,6 +96,6 @@ export function ItemRow({
           {lineTotal > 0 ? `Σ ${formatMoney(lineTotal, currency)}` : 'tap price'}
         </Text>
       </Pressable>
-    </Pressable>
+    </View>
   );
 }
