@@ -158,6 +158,7 @@ export function useShoppingController(tripId: number) {
     openPriceEditor,
     savePrice,
     confirmComplete,
+    openAddItems: () => router.push(`/trips/${tripId}/add-items` as never),
     exit: () => router.back(),
   } as const;
 }

@@ -1,8 +1,9 @@
 import { useLocalSearchParams } from 'expo-router';
-import { ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { NumpadSheet } from '@/ui/components/NumpadSheet';
+import { AddItemRow } from '@/ui/components/shopping/AddItemRow';
 import { BoughtDivider } from '@/ui/components/shopping/BoughtDivider';
 import { ItemEditSheet } from '@/ui/components/shopping/ItemEditSheet';
 import { ShoppingHeader } from '@/ui/components/shopping/ShoppingHeader';
@@ -56,17 +57,31 @@ export default function ShoppingModeScreen() {
             alignItems: 'center',
             justifyContent: 'center',
             padding: 32,
-            gap: 8,
+            gap: 12,
           }}
         >
           <Text style={{ color: tokens.text.primary, fontSize: 16, fontWeight: '700' }}>
-            No items on this trip
+            No items yet
           </Text>
           <Text
             style={{ color: tokens.text.tertiary, fontSize: 13, textAlign: 'center' }}
           >
-            Add items from the trip detail screen before you start shopping.
+            Add the first item to start tracking what you buy.
           </Text>
+          <Pressable
+            onPress={ctrl.openAddItems}
+            style={({ pressed }) => ({
+              marginTop: 8,
+              paddingHorizontal: 18,
+              paddingVertical: 12,
+              borderRadius: 12,
+              backgroundColor: pressed ? tokens.accent.active : tokens.accent.base,
+            })}
+          >
+            <Text style={{ color: tokens.text.onAccent, fontWeight: '700', fontSize: 15 }}>
+              Add items
+            </Text>
+          </Pressable>
         </View>
       ) : (
         <ScrollView
@@ -78,6 +93,8 @@ export default function ShoppingModeScreen() {
             gap: 10,
           }}
         >
+          <AddItemRow onPress={ctrl.openAddItems} />
+
           {ctrl.unboughtItems.map((item) => (
             <Animated.View key={item.id} layout={transition}>
               <ShoppingItemRow
