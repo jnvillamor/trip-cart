@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { TRIP_STATUS_ENUM } from '@/domain/constants';
 import { Category, Good, TripItem } from '@/domain/entities';
 import { ConfirmRequest } from '@/ui/components/ConfirmDialog';
+import { useSnackbar } from '@/ui/components/Snackbar';
 import { PrimaryAction } from '@/ui/components/trip-detail/BottomActionBar';
 import { MoreAction } from '@/ui/components/trip-detail/MoreActionsSheet';
 import { useActiveTrip } from '@/ui/hooks/useActiveTrip';
@@ -33,6 +34,7 @@ export type TripDetailController = ReturnType<typeof useTripDetailController>;
 
 export function useTripDetailController(tripId: number) {
   const router = useRouter();
+  const snackbar = useSnackbar();
 
   const { data: trip, isLoading } = useTrip(tripId);
   const { data: items = [] } = useTripItems(tripId);
@@ -195,11 +197,13 @@ export function useTripDetailController(tripId: number) {
       destructive: true,
       onConfirm: async () => {
         await cancelTrip.mutateAsync();
+        snackbar.show({ kind: 'success', message: 'Trip canceled.' });
       },
     });
   const doDuplicate = async () => {
     const created = await duplicateTrip.mutateAsync(tripId);
     router.replace(`/trips/${created.id}` as never);
+    snackbar.show({ kind: 'success', message: 'Trip duplicated.' });
   };
   const confirmDelete = () =>
     setConfirm({
@@ -210,6 +214,7 @@ export function useTripDetailController(tripId: number) {
       onConfirm: async () => {
         await deleteTrip.mutateAsync(tripId);
         router.back();
+        snackbar.show({ kind: 'success', message: 'Trip deleted.' });
       },
     });
 

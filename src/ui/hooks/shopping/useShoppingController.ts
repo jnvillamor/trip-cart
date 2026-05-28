@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { TripItem } from '@/domain/entities';
 import { UpdateTripItemInput } from '@/domain/schemas';
 import { ConfirmRequest } from '@/ui/components/ConfirmDialog';
+import { useSnackbar } from '@/ui/components/Snackbar';
 import { useGoods } from '@/ui/hooks/useGoods';
 import { useStores } from '@/ui/hooks/useStores';
 import { useCompleteTrip, useTrip } from '@/ui/hooks/useTrips';
@@ -39,6 +40,7 @@ function plannedSubtotal(item: TripItem): number {
 
 export function useShoppingController(tripId: number) {
   const router = useRouter();
+  const snackbar = useSnackbar();
 
   const { data: trip, isLoading } = useTrip(tripId);
   const { data: items = [] } = useTripItems(tripId);
@@ -89,6 +91,7 @@ export function useShoppingController(tripId: number) {
     } else {
       router.replace(`/trips/${tripId}` as never);
     }
+    snackbar.show({ kind: 'success', message: 'Trip completed. Totals locked.' });
   }
 
   function toggleChecked(item: TripItem) {

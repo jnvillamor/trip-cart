@@ -1,12 +1,14 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ConfirmRequest } from '@/ui/components/ConfirmDialog';
+import { useSnackbar } from '@/ui/components/Snackbar';
 import { StatusFilter } from '@/ui/components/trips-list/StatusFilterChips';
 import { useStores } from '@/ui/hooks/useStores';
 import { useDeleteTrip, useTrips } from '@/ui/hooks/useTrips';
 
 export function useTripsListController() {
   const router = useRouter();
+  const snackbar = useSnackbar();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [selectedIds, setSelectedIds] = useState<Set<number>>(() => new Set());
   const [confirm, setConfirm] = useState<ConfirmRequest | null>(null);
@@ -62,6 +64,10 @@ export function useTripsListController() {
       onConfirm: async () => {
         await Promise.all(ids.map((id) => deleteTrip.mutateAsync(id)));
         setSelectedIds(new Set());
+        snackbar.show({
+          kind: 'success',
+          message: `Deleted ${ids.length} ${ids.length === 1 ? 'trip' : 'trips'}.`,
+        });
       },
     });
   }

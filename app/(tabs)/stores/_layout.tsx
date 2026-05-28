@@ -17,7 +17,7 @@ export default function StoresLayout() {
         name="new"
         options={{
           presentation: 'formSheet',
-          sheetAllowedDetents: 'large',
+          sheetAllowedDetents: [1.0],
           sheetGrabberVisible: true,
           sheetCornerRadius: 24,
         }}

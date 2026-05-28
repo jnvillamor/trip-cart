@@ -12,11 +12,13 @@ import {
   validateBackup,
 } from '@/domain/backup';
 import { ConfirmRequest } from '@/ui/components/ConfirmDialog';
+import { useSnackbar } from '@/ui/components/Snackbar';
 
 type Pending = { summary: BackupSummary; payload: ReturnType<typeof validateBackup> };
 
 export function useDataSettingsController() {
   const qc = useQueryClient();
+  const snackbar = useSnackbar();
   const [busy, setBusy] = useState<'idle' | 'exporting' | 'importing'>('idle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [pending, setPending] = useState<Pending | null>(null);
@@ -45,11 +47,13 @@ export function useDataSettingsController() {
           dialogTitle: 'Share TripCart backup',
           UTI: 'public.json',
         });
+        snackbar.show({ kind: 'success', message: 'Backup exported.' });
       } else {
         setErrorMsg(`Saved backup at ${uri} (sharing unavailable on this device).`);
       }
     } catch (e) {
       setErrorMsg(e instanceof Error ? e.message : 'Export failed.');
+      snackbar.show({ kind: 'error', message: 'Export failed.' });
     } finally {
       setBusy('idle');
     }
@@ -97,8 +101,10 @@ export function useDataSettingsController() {
       await replaceAllFromBackup(payload);
       await qc.invalidateQueries();
       setPending(null);
+      snackbar.show({ kind: 'success', message: 'Backup restored.' });
     } catch (e) {
       setErrorMsg(e instanceof Error ? e.message : 'Import failed.');
+      snackbar.show({ kind: 'error', message: 'Import failed.' });
     } finally {
       setBusy('idle');
     }

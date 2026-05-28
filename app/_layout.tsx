@@ -1,20 +1,30 @@
 import 'react-native-gesture-handler';
 import { Redirect, Slot, useSegments } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SnackbarProvider } from '@/ui/components/Snackbar';
 import { useOnboarded } from '@/ui/hooks/useOnboarded';
 import { QueryProvider } from '@/ui/providers/QueryProvider';
-import { ThemeProvider } from '@/ui/theme/ThemeProvider';
+import { ThemeProvider, useTheme } from '@/ui/theme/ThemeProvider';
 
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryProvider>
         <ThemeProvider>
-          <RootGate />
+          <SnackbarProvider>
+            <ThemedStatusBar />
+            <RootGate />
+          </SnackbarProvider>
         </ThemeProvider>
       </QueryProvider>
     </GestureHandlerRootView>
   );
+}
+
+function ThemedStatusBar() {
+  const { resolved } = useTheme();
+  return <StatusBar style={resolved === 'dark' ? 'light' : 'dark'} />;
 }
 
 function RootGate() {
