@@ -1,13 +1,15 @@
 import { ScrollView, Text, View } from 'react-native';
 import { DateRangeChips } from '@/ui/components/insights/DateRangeChips';
-import { useInsightsByStoreController } from '@/ui/hooks/insights-by-store/useInsightsByStoreController';
+import { useInsightsByCategoryController } from '@/ui/hooks/insights-by-category/useInsightsByCategoryController';
 import { formatMoney } from '@/ui/lib/format';
 import { useTheme } from '@/ui/theme/ThemeProvider';
-import { StoreBarChart } from './StoreBarChart';
+import { CategoryBarChart } from './CategoryBarChart';
+import { CategoryPieChart } from './CategoryPieChart';
+import { ChartModeToggle } from './ChartModeToggle';
 
-export function ByStoreTab() {
+export function ByCategoryTab() {
   const { tokens } = useTheme();
-  const ctrl = useInsightsByStoreController();
+  const ctrl = useInsightsByCategoryController();
 
   if (ctrl.loading) {
     return <View style={{ flex: 1, backgroundColor: tokens.bg.page }} />;
@@ -20,7 +22,14 @@ export function ByStoreTab() {
     >
       <DateRangeChips value={ctrl.range} onChange={ctrl.setRange} />
 
-      <View style={{ flexDirection: 'row', gap: 16, marginTop: 4 }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'flex-end',
+          justifyContent: 'space-between',
+          marginTop: 4,
+        }}
+      >
         <View>
           <Text
             style={{
@@ -45,33 +54,18 @@ export function ByStoreTab() {
             {formatMoney(ctrl.grandTotal, ctrl.currency)}
           </Text>
         </View>
-        <View>
-          <Text
-            style={{
-              color: tokens.text.tertiary,
-              fontSize: 11,
-              fontWeight: '700',
-              letterSpacing: 0.5,
-              textTransform: 'uppercase',
-            }}
-          >
-            Trips
-          </Text>
-          <Text
-            style={{
-              color: tokens.text.primary,
-              fontSize: 24,
-              fontWeight: '700',
-              marginTop: 2,
-              letterSpacing: -0.3,
-            }}
-          >
-            {ctrl.tripsInRange}
-          </Text>
-        </View>
+        <ChartModeToggle value={ctrl.mode} onChange={ctrl.setMode} />
       </View>
 
-      <StoreBarChart bars={ctrl.bars} currency={ctrl.currency} />
+      {ctrl.mode === 'pie' ? (
+        <CategoryPieChart
+          slices={ctrl.slices}
+          grandTotal={ctrl.grandTotal}
+          currency={ctrl.currency}
+        />
+      ) : (
+        <CategoryBarChart slices={ctrl.slices} currency={ctrl.currency} />
+      )}
     </ScrollView>
   );
 }

@@ -1,23 +1,12 @@
 import { useMemo, useState } from 'react';
 import { TRIP_STATUS_ENUM } from '@/domain/constants';
 import { TripItem } from '@/domain/entities';
-import { RangePreset } from '@/ui/components/insights-by-store/DateRangeChips';
+import { RangePreset } from '@/ui/components/insights/DateRangeChips';
 import { useSettings } from '@/ui/hooks/useSettings';
 import { useStores } from '@/ui/hooks/useStores';
 import { useTrips } from '@/ui/hooks/useTrips';
 import { useAllTripItems } from '@/ui/hooks/useTripItems';
-
-function rangeStart(preset: RangePreset, now: Date): Date | null {
-  if (preset === 'all') return null;
-  const d = new Date(now);
-  if (preset === 'month') {
-    return new Date(d.getFullYear(), d.getMonth(), 1);
-  }
-  if (preset === '3m') {
-    return new Date(d.getFullYear(), d.getMonth() - 2, 1);
-  }
-  return new Date(d.getFullYear(), 0, 1);
-}
+import { rangeStart } from '@/ui/lib/insights';
 
 function actualSubtotal(item: TripItem): number {
   if (!item.is_checked) return 0;
