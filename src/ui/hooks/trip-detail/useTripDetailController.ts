@@ -119,7 +119,7 @@ export function useTripDetailController(tripId: number) {
     setPriceEdit(null);
   }
 
-  async function handleDragEnd(newOrder: TripItem[]) {
+  async function applyOrder(newOrder: TripItem[]) {
     const updates = newOrder
       .map((item, i) => (item.sort_order !== i ? { id: item.id, sort_order: i } : null))
       .filter((x): x is { id: number; sort_order: number } => x !== null);
@@ -130,10 +130,34 @@ export function useTripDetailController(tripId: number) {
     );
   }
 
+  async function handleDragEnd(newOrder: TripItem[]) {
+    await applyOrder(newOrder);
+  }
+
   function getItemCategoryId(item: TripItem): number | null {
     return (
       item.category_id_snapshot ?? goodById.get(item.good_id)?.default_category_id ?? null
     );
+  }
+
+  async function sortByCategory() {
+    const grouped = new Map<number | null, TripItem[]>();
+    for (const item of sortedItems) {
+      const cid = getItemCategoryId(item);
+      const bucket = grouped.get(cid);
+      if (bucket) bucket.push(item);
+      else grouped.set(cid, [item]);
+    }
+    const cids = Array.from(grouped.keys()).sort((a, b) => {
+      if (a === null) return 1;
+      if (b === null) return -1;
+      const na = categoryById.get(a)?.name ?? '';
+      const nb = categoryById.get(b)?.name ?? '';
+      return na.localeCompare(nb);
+    });
+    const newOrder: TripItem[] = [];
+    for (const cid of cids) newOrder.push(...grouped.get(cid)!);
+    await applyOrder(newOrder);
   }
 
   function categoryFor(item: TripItem): Category | undefined {
@@ -218,6 +242,14 @@ export function useTripDetailController(tripId: number) {
   const moreActions: MoreAction[] = (() => {
     const list: MoreAction[] = [];
     if (editable) list.push({ key: 'add', label: 'Add items', icon: 'add', onPress: goAddItems });
+    if (editable && hasItems) {
+      list.push({
+        key: 'sort-category',
+        label: 'Sort by category',
+        icon: 'sort',
+        onPress: sortByCategory,
+      });
+    }
     if (trip.status === TRIP_STATUS_ENUM.PLANNED) {
       list.push({
         key: 'start',

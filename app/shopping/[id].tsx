@@ -37,7 +37,7 @@ export default function ShoppingModeScreen() {
   }
 
   const empty = ctrl.unboughtItems.length === 0 && ctrl.boughtItems.length === 0;
-  const transition = LinearTransition.springify().damping(18).stiffness(180);
+  const transition = LinearTransition.duration(180);
 
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg.page }}>
