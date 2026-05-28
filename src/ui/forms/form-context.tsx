@@ -2,7 +2,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { createFormHook, createFormHookContexts } from '@tanstack/react-form';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { SUPPORTED_CURRENCIES } from '@/domain/currency';
+import { findCurrency } from '@/domain/currency';
+import { CurrencyPickerSheet } from '@/ui/components/CurrencyPickerSheet';
 import { useCategories } from '@/ui/hooks/useCategories';
 import { useStores } from '@/ui/hooks/useStores';
 import { Theme } from '@/ui/theme/tokens';
@@ -345,56 +346,62 @@ function CategoryChip({
 function CurrencyField({ label, hint }: { label: string; hint?: string }) {
   const field = useFieldContext<string>();
   const { tokens } = useTheme();
+  const [open, setOpen] = useState(false);
   const first = field.state.meta.errors[0];
   const error = typeof first === 'string' ? first : first?.message;
-  const options = [
-    { code: '', label: 'Global' },
-    ...SUPPORTED_CURRENCIES.map((c) => ({ code: c.code, label: c.code })),
-  ];
+  const code = field.state.value;
+  const meta = code ? findCurrency(code) : undefined;
   return (
     <FieldShell label={label} hint={hint} error={error} tokens={tokens}>
-      <View
-        style={{
+      <Pressable
+        onPress={() => setOpen(true)}
+        style={({ pressed }) => ({
           flexDirection: 'row',
-          backgroundColor: tokens.bg.surface,
+          alignItems: 'center',
+          gap: 12,
+          backgroundColor: pressed ? tokens.bg.elevated : tokens.bg.surface,
           borderRadius: 12,
           borderWidth: 1,
           borderColor: tokens.border.subtle,
-          padding: 4,
-          gap: 4,
-        }}
-      >
-        {options.map((opt) => {
-          const active = field.state.value === opt.code;
-          return (
-            <Pressable
-              key={opt.code || 'global'}
-              onPress={() => field.handleChange(opt.code)}
-              style={({ pressed }) => ({
-                flex: 1,
-                paddingVertical: 10,
-                borderRadius: 8,
-                alignItems: 'center',
-                backgroundColor: active
-                  ? tokens.accent.base
-                  : pressed
-                    ? tokens.bg.elevated
-                    : 'transparent',
-              })}
-            >
-              <Text
-                style={{
-                  color: active ? tokens.text.onAccent : tokens.text.secondary,
-                  fontWeight: '600',
-                  fontSize: 13,
-                }}
-              >
-                {opt.label}
-              </Text>
-            </Pressable>
-          );
+          paddingVertical: 12,
+          paddingHorizontal: 14,
         })}
-      </View>
+      >
+        <View
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            backgroundColor: tokens.bg.tonal,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Text
+            style={{ color: tokens.text.primary, fontSize: 13, fontWeight: '700' }}
+          >
+            {meta ? meta.symbol.slice(0, 3) : 'GBL'}
+          </Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: tokens.text.primary, fontSize: 15, fontWeight: '600' }}>
+            {meta ? meta.code : 'Global default'}
+          </Text>
+          <Text
+            style={{ color: tokens.text.tertiary, fontSize: 12, marginTop: 2 }}
+            numberOfLines={1}
+          >
+            {meta ? meta.name : 'Use the global currency from Settings.'}
+          </Text>
+        </View>
+        <MaterialIcons name="unfold-more" color={tokens.text.tertiary} size={20} />
+      </Pressable>
+      <CurrencyPickerSheet
+        visible={open}
+        value={field.state.value}
+        onPick={(next) => field.handleChange(next)}
+        onClose={() => setOpen(false)}
+      />
     </FieldShell>
   );
 }
