@@ -11,7 +11,7 @@ import { ItemRow } from '@/ui/components/trip-detail/ItemRow';
 import { MoreActionsSheet } from '@/ui/components/trip-detail/MoreActionsSheet';
 import { SectionHeader } from '@/ui/components/trip-detail/SectionHeader';
 import { SummaryCard } from '@/ui/components/trip-detail/SummaryCard';
-import { useTripDetailController } from '@/ui/hooks/useTripDetailController';
+import { useTripDetailController } from '@/ui/hooks/trip-detail/useTripDetailController';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
 const TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 49 : 56;

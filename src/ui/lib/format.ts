@@ -25,3 +25,9 @@ export function formatTripDate(trip: Trip): string {
     year: 'numeric',
   });
 }
+
+export function formatTripShortDate(trip: Trip): string | undefined {
+  const d = trip.completed_at ?? trip.started_at ?? trip.planned_for;
+  if (!d) return undefined;
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
