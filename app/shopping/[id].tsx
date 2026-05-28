@@ -1,6 +1,8 @@
 import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams } from 'expo-router';
 import { Text, View } from 'react-native';
+import { NumpadSheet } from '@/ui/components/NumpadSheet';
+import { ItemEditSheet } from '@/ui/components/shopping/ItemEditSheet';
 import { ShoppingHeader } from '@/ui/components/shopping/ShoppingHeader';
 import { ShoppingItemRow } from '@/ui/components/shopping/ShoppingItemRow';
 import { TotalFooter } from '@/ui/components/shopping/TotalFooter';
@@ -50,6 +52,8 @@ export default function ShoppingModeScreen() {
             item={item}
             good={ctrl.goodFor(item)}
             currency={ctrl.currency}
+            onToggleChecked={() => ctrl.toggleChecked(item)}
+            onEdit={() => ctrl.setEditing(item.id)}
           />
         )}
         contentContainerStyle={{
@@ -59,13 +63,7 @@ export default function ShoppingModeScreen() {
         }}
         ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
         ListEmptyComponent={
-          <View
-            style={{
-              padding: 32,
-              alignItems: 'center',
-              gap: 8,
-            }}
-          >
+          <View style={{ padding: 32, alignItems: 'center', gap: 8 }}>
             <Text style={{ color: tokens.text.primary, fontSize: 16, fontWeight: '700' }}>
               No items on this trip
             </Text>
@@ -79,6 +77,28 @@ export default function ShoppingModeScreen() {
       />
 
       <TotalFooter runningTotal={ctrl.runningTotal} currency={ctrl.currency} />
+
+      <ItemEditSheet
+        visible={ctrl.editing != null}
+        item={ctrl.editingItem}
+        good={ctrl.editingItem ? ctrl.goodFor(ctrl.editingItem) : undefined}
+        currency={ctrl.currency}
+        onAdjustQty={(delta) =>
+          ctrl.editingItem ? ctrl.adjustQty(ctrl.editingItem, delta) : undefined
+        }
+        onEditPrice={() =>
+          ctrl.editingItem ? ctrl.openPriceEditor(ctrl.editingItem) : undefined
+        }
+        onClose={() => ctrl.setEditing(null)}
+      />
+
+      <NumpadSheet
+        visible={ctrl.priceEdit !== null}
+        initial={ctrl.priceEdit?.initial ?? 0}
+        currency={ctrl.currency}
+        onSave={ctrl.savePrice}
+        onClose={() => ctrl.setPriceEdit(null)}
+      />
     </View>
   );
 }

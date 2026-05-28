@@ -50,10 +50,12 @@ export function QuantityStepper({
           color: tokens.text.secondary,
           fontSize: 13,
           fontWeight: '600',
-          minWidth: 40,
+          minWidth: 48,
+          textAlign: 'center',
         }}
       >
-        {formatQty(value)} {unit}
+        {formatQty(value)}
+        {unit ? ` ${unit}` : ''}
       </Text>
       {btn('+', 1, false)}
     </View>
