@@ -19,6 +19,16 @@ export function useTripItems(tripId: number) {
   });
 }
 
+export function useAllTripItems() {
+  return useQuery({
+    queryKey: ['trip-items', 'all'],
+    queryFn: async () => {
+      const repo = await getRepo();
+      return repo.list({});
+    },
+  });
+}
+
 export function useCreateTripItem(tripId: number) {
   const qc = useQueryClient();
   return useMutation({
@@ -32,7 +42,7 @@ export function useCreateTripItem(tripId: number) {
       } as UpdateTripItemInput);
       return updated ?? created;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['trip-items', tripId] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['trip-items'] }),
   });
 }
 
@@ -49,7 +59,7 @@ export function useUpdateTripItem(tripId: number) {
       const repo = await getRepo();
       return repo.update(id, input as UpdateTripItemInput);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['trip-items', tripId] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['trip-items'] }),
   });
 }
 
@@ -60,7 +70,7 @@ export function useToggleTripItem(tripId: number) {
       const repo = await getRepo();
       return repo.toggleCheck(id);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['trip-items', tripId] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['trip-items'] }),
   });
 }
 
@@ -71,6 +81,6 @@ export function useRemoveTripItem(tripId: number) {
       const repo = await getRepo();
       return repo.remove(id);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['trip-items', tripId] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['trip-items'] }),
   });
 }
