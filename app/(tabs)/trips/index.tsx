@@ -1,6 +1,8 @@
-import { FlashList } from '@shopify/flash-list';
+import { FlashList, FlashListRef } from '@shopify/flash-list';
+import { useEffect, useRef } from 'react';
 import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Trip } from '@/domain/entities';
 import { ActiveTripBanner } from '@/ui/components/ActiveTripBanner';
 import { FAB, useFabBottomReserve } from '@/ui/components/FAB';
 import { ListEmptyState } from '@/ui/components/ListEmptyState';
@@ -13,6 +15,21 @@ export default function TripsListScreen() {
   const { tokens } = useTheme();
   const fabReserve = useFabBottomReserve();
   const ctrl = useTripsListController();
+
+  const listRef = useRef<FlashListRef<Trip>>(null);
+  const previousFirstId = useRef<number | null>(null);
+
+  useEffect(() => {
+    const firstId = ctrl.trips[0]?.id ?? null;
+    if (
+      previousFirstId.current !== null &&
+      firstId !== null &&
+      firstId !== previousFirstId.current
+    ) {
+      listRef.current?.scrollToOffset({ offset: 0, animated: true });
+    }
+    previousFirstId.current = firstId;
+  }, [ctrl.trips]);
 
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg.page }}>
@@ -35,6 +52,7 @@ export default function TripsListScreen() {
       <ActiveTripBanner />
 
       <FlashList
+        ref={listRef}
         data={ctrl.trips}
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => (

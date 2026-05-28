@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { initDatabase } from '@/db/client';
 import { TRIP_STATUS_ENUM } from '@/domain/constants';
+import { Trip } from '@/domain/entities';
 import { TripStatus } from '@/domain/schemas';
 import { createTripItemRepo } from '@/domain/repositories/trip-item.repo';
 import { createTripRepo } from '@/domain/repositories/trip.repo';
@@ -47,7 +48,13 @@ export function useCreateTrip() {
       const repo = await getRepo();
       return repo.create(input);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['trips'] }),
+    onSuccess: (created) => {
+      qc.setQueriesData<Trip[]>({ queryKey: ['trips'] }, (old) => {
+        if (!Array.isArray(old)) return old;
+        return [created, ...old];
+      });
+      qc.invalidateQueries({ queryKey: ['trips'] });
+    },
   });
 }
 
