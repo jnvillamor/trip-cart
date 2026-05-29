@@ -91,6 +91,12 @@ export default function TripDetailScreen() {
       <FlashList
         data={sortedItems}
         keyExtractor={(item) => String(item.id)}
+        getItemType={(item, index) => {
+          const prev = index > 0 ? sortedItems[index - 1] : undefined;
+          const showHeader =
+            !prev || getItemCategoryId(item) !== getItemCategoryId(prev);
+          return showHeader ? 'section-start' : 'row';
+        }}
         renderItem={({ item, index }) => {
           const prev = index > 0 ? sortedItems[index - 1] : undefined;
           const showHeader =

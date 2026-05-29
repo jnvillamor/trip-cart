@@ -8,7 +8,7 @@ export default function TripsLayout() {
       screenOptions={{
         headerShown: false,
         gestureEnabled: true,
-        fullScreenGestureEnabled: true,
+        fullScreenGestureEnabled: false,
         contentStyle: { backgroundColor: tokens.bg.page },
       }}
     >

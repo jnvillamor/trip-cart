@@ -8,7 +8,7 @@ export default function SettingsLayout() {
       screenOptions={{
         headerShown: false,
         gestureEnabled: true,
-        fullScreenGestureEnabled: true,
+        fullScreenGestureEnabled: false,
         contentStyle: { backgroundColor: tokens.bg.page },
       }}
     >
