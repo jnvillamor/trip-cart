@@ -148,10 +148,11 @@ export function useDuplicateTrip() {
         notes: source.notes ?? undefined,
       });
       for (const item of sourceItems) {
+        const carriedUnitPrice = item.actual_unit_price || item.planned_unit_price || 0;
         await itemRepo.create(newTrip.id, {
           good_id: item.good_id,
           planned_quantity: item.planned_quantity ?? 0,
-          planned_unit_price: item.planned_unit_price ?? 0,
+          planned_unit_price: carriedUnitPrice,
           notes: item.notes ?? undefined,
         });
       }
