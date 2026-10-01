@@ -37,9 +37,7 @@ export function useCreateTripItem(tripId: number) {
       const existing = await repo.list({ tripId });
       const nextOrder = existing.reduce((max, it) => Math.max(max, it.sort_order), -1) + 1;
       const created = await repo.create(tripId, input);
-      const updated = await repo.update(created.id, {
-        sort_order: nextOrder,
-      } as UpdateTripItemInput);
+      const updated = await repo.update(created.id, { sort_order: nextOrder });
       return updated ?? created;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['trip-items'] }),
@@ -57,7 +55,7 @@ export function useUpdateTripItem(tripId: number) {
       input: Partial<UpdateTripItemInput>;
     }) => {
       const repo = await getRepo();
-      return repo.update(id, input as UpdateTripItemInput);
+      return repo.update(id, input);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['trip-items'] }),
   });

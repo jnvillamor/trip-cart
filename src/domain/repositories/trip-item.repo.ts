@@ -48,7 +48,7 @@ export const createTripItemRepo = (db: Database) => ({
     return rows.map(toTripItem);
   },
 
-  async update(id: number, input: UpdateTripItemInput): Promise<TripItem | null> {
+  async update(id: number, input: Partial<UpdateTripItemInput>): Promise<TripItem | null> {
     const patch: Partial<TripItemInsert> = { updated_at: new Date() };
     if (input.planned_quantity !== undefined) patch.planned_quantity = input.planned_quantity ?? 0;
     if (input.planned_unit_price !== undefined) {

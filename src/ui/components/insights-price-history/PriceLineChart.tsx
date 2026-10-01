@@ -80,8 +80,8 @@ export function PriceLineChart({
               month: 'short',
               day: 'numeric',
             }),
-          formatYLabel: (v: number) =>
-            v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v.toFixed(0),
+          formatYLabel: (v) =>
+            v == null ? '' : v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v.toFixed(0),
           labelOffset: { x: 6, y: 8 },
         }}
       >
