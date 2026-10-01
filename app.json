@@ -41,7 +41,7 @@
     },
     "owner": "jnvillamor",
     "runtimeVersion": {
-      "policy": "appVersion"
+      "policy": "sdkVersion"
     },
     "updates": {
       "url": "https://u.expo.dev/1e05a916-2037-4c27-859d-7594e4fb5c89"
