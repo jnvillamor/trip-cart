@@ -1,5 +1,5 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
+import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
 export default function TabsLayout() {
@@ -12,24 +12,39 @@ export default function TabsLayout() {
       labelStyle={{ color: tokens.text.tertiary }}
     >
       <NativeTabs.Trigger name="trips">
-        <Icon sf="cart.fill" androidSrc={<MaterialIcons name="shopping-cart" />} />
-        <Label>Trips</Label>
+        <NativeTabs.Trigger.Icon
+          sf="cart.fill"
+          src={<NativeTabs.Trigger.VectorIcon family={MaterialIcons} name="shopping-cart" />}
+        />
+        <NativeTabs.Trigger.Label>Trips</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="stores">
-        <Icon sf="storefront.fill" androidSrc={<MaterialIcons name="storefront" />} />
-        <Label>Stores</Label>
+        <NativeTabs.Trigger.Icon
+          sf="storefront.fill"
+          src={<NativeTabs.Trigger.VectorIcon family={MaterialIcons} name="storefront" />}
+        />
+        <NativeTabs.Trigger.Label>Stores</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="catalog">
-        <Icon sf="shippingbox.fill" androidSrc={<MaterialIcons name="inventory-2" />} />
-        <Label>Catalog</Label>
+        <NativeTabs.Trigger.Icon
+          sf="shippingbox.fill"
+          src={<NativeTabs.Trigger.VectorIcon family={MaterialIcons} name="inventory-2" />}
+        />
+        <NativeTabs.Trigger.Label>Catalog</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="insights">
-        <Icon sf="chart.bar.fill" androidSrc={<MaterialIcons name="insights" />} />
-        <Label>Insights</Label>
+        <NativeTabs.Trigger.Icon
+          sf="chart.bar.fill"
+          src={<NativeTabs.Trigger.VectorIcon family={MaterialIcons} name="insights" />}
+        />
+        <NativeTabs.Trigger.Label>Insights</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="settings">
-        <Icon sf="gearshape.fill" androidSrc={<MaterialIcons name="settings" />} />
-        <Label>Settings</Label>
+        <NativeTabs.Trigger.Icon
+          sf="gearshape.fill"
+          src={<NativeTabs.Trigger.VectorIcon family={MaterialIcons} name="settings" />}
+        />
+        <NativeTabs.Trigger.Label>Settings</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
     </NativeTabs>
   );
