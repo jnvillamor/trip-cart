@@ -1,4 +1,4 @@
-import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
+import { createMaterialTopTabNavigator } from 'expo-router/js-top-tabs';
 import { ByCategoryTab } from '@/ui/components/insights-by-category/ByCategoryTab';
 import { ByStoreTab } from '@/ui/components/insights-by-store/ByStoreTab';
 import { OverviewTab } from '@/ui/components/insights-overview/OverviewTab';
