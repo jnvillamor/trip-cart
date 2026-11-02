@@ -1,6 +1,6 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
-import { Swipeable } from 'react-native-gesture-handler';
+import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { Good, TripItem } from '@/domain/entities';
 import { effectivePrice, effectiveQty } from '@/ui/hooks/shopping/useShoppingController';
 import { formatMoney, formatQty } from '@/ui/lib/format';
