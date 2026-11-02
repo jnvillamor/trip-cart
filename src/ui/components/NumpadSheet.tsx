@@ -7,6 +7,7 @@ import {
   Pressable,
   Text,
   TextInput,
+  type TextInputInstance,
   View,
 } from 'react-native';
 import { useTheme } from '@/ui/theme/ThemeProvider';
@@ -30,7 +31,7 @@ export function NumpadSheet({
 }) {
   const { tokens } = useTheme();
   const [text, setText] = useState('');
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<TextInputInstance>(null);
 
   useEffect(() => {
     if (visible) {
