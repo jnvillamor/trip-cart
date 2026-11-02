@@ -12,7 +12,7 @@ export default function InsightsLayout() {
         contentStyle: { backgroundColor: tokens.bg.page },
       }}
     >
-      <Stack.Screen name="index" options={{ title: 'Insights' }} />
+      <Stack.Screen name="(top)" options={{ title: 'Insights' }} />
     </Stack>
   );
 }
